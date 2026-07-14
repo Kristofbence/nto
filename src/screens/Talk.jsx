@@ -3,7 +3,7 @@
 // Design/layout is unchanged from the prototype — only behavior is wired up.
 import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
-import { CloseIcon, BookIcon, MicIcon } from "../components/icons";
+import { CloseIcon, BookIcon, MicIcon, LanguagesIcon } from "../components/icons";
 import { useTutorView } from "../settings";
 import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
@@ -83,32 +83,41 @@ function TappableText({ text, onWord, style }) {
   });
 }
 
-// Small grey English translation line under a tutor bubble (settings-controlled).
-// Translated client-side (never via the assistant, so it's never spoken).
+// Small grey English translation line under a tutor bubble. Fetched lazily
+// (only mounted once the user reveals it) and client-side (never via the
+// assistant, so it's never spoken). undefined = loading, null = failed.
 function TranslationLine({ text, lang }) {
-  const [tr, setTr] = useState(null);
+  const [tr, setTr] = useState(undefined);
   useEffect(() => {
     let alive = true;
-    setTr(null);
+    setTr(undefined);
     if (!text) return undefined;
-    // Debounce so a bubble that grows across several finals doesn't spam the API.
-    const id = setTimeout(() => {
-      translate(text, lang, "en").then((t) => { if (alive) setTr(t); });
-    }, 300);
-    return () => { alive = false; clearTimeout(id); };
+    translate(text, lang, "en")
+      .then((t) => { if (alive) setTr(t ?? null); })
+      .catch(() => { if (alive) setTr(null); });
+    return () => { alive = false; };
   }, [text, lang]);
-  if (!tr) return null;
-  return (
-    <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8, lineHeight: 1.42 }}>{tr}</div>
-  );
+  const style = { fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8, lineHeight: 1.42 };
+  if (tr === undefined) return <div style={style}>Translating…</div>;
+  if (tr === null) return <div style={style}>Translation unavailable.</div>;
+  return <div style={style}>{tr}</div>;
 }
 
+// Subtle affordance / toggle for tap-to-reveal translation.
+const translateToggle = {
+  display: "inline-flex", alignItems: "center", gap: 5, background: "transparent",
+  border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 600,
+  color: "#8e8e93", WebkitTapHighlightColor: "transparent",
+};
+
 // A live transcript bubble — tutor (assistant) white/left, user grey/right.
-// `ready` = this turn has ended (Spanish complete) → safe to show the English
-// translation. While a tutor turn is still streaming, `ready` is false so the
-// translation never appears/flickers mid-stream.
+// Tutor bubbles offer TAP-TO-REVEAL English (per bubble) once the turn is
+// finalized (`ready`) and the "Show translations" setting is on.
 function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang, ready }) {
   const isUser = role === "user";
+  const [revealed, setRevealed] = useState(false);
+  const canTranslate = !isUser && showTranslation && ready && !!finalized;
+
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
       <div style={{ ...cardSoft, ...(isUser ? { background: "#E5E5EA" } : null) }}>
@@ -118,7 +127,21 @@ function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang
         <div style={{ fontSize: 16, fontWeight: isUser ? 600 : 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
           <TappableText text={text} onWord={onWord} />
         </div>
-        {!isUser && showTranslation && ready && finalized ? <TranslationLine text={finalized} lang={lang} /> : null}
+
+        {canTranslate && !revealed && (
+          <button onClick={() => setRevealed(true)} style={{ ...translateToggle, marginTop: 8 }}>
+            <LanguagesIcon size={13} stroke="#8e8e93" strokeWidth={2} />
+            <span>Tap to translate</span>
+          </button>
+        )}
+        {canTranslate && revealed && (
+          <>
+            <TranslationLine text={finalized} lang={lang} />
+            <button onClick={() => setRevealed(false)} style={{ ...translateToggle, marginTop: 6 }}>
+              <span>Hide translation</span>
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
