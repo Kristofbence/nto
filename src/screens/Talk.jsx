@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon, SkipIcon } from "../components/icons";
+import { useTutorView } from "../settings";
+import { lookupWord } from "../lookup";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
 // import can arrive as the class itself or wrapped as { default: class }. Unwrap
@@ -23,8 +25,28 @@ const cardSoft = {
   padding: "15px 16px 16px",
 };
 
+// Renders a string as individually tappable words (display-layer only — no
+// visible styling by default, so bubbles look identical). Whitespace/punctuation
+// is preserved; punctuation is stripped from the word passed to onWord.
+function TappableText({ text, onWord, style }) {
+  return (text || "").split(/(\s+)/).map((tok, i) => {
+    if (!tok || /^\s+$/.test(tok)) return tok;
+    const clean = tok.replace(/[^\p{L}\p{M}''-]/gu, "");
+    if (!clean) return tok;
+    return (
+      <span
+        key={i}
+        onClick={(e) => onWord(clean, e)}
+        style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent", ...style }}
+      >
+        {tok}
+      </span>
+    );
+  });
+}
+
 // A live transcript bubble — tutor (assistant) white/left, user grey/right.
-function TranscriptBubble({ role, text }) {
+function TranscriptBubble({ role, text, onWord }) {
   const isUser = role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
@@ -32,7 +54,9 @@ function TranscriptBubble({ role, text }) {
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: isUser ? "#8e8e93" : "#a1a1a6", textTransform: "uppercase", marginBottom: 5, textAlign: isUser ? "right" : "left" }}>
           {isUser ? "You" : "Tutor"}
         </div>
-        <div style={{ fontSize: 19, fontWeight: isUser ? 600 : 700, lineHeight: 1.3, letterSpacing: "-0.02em", color: "#000" }}>{text}</div>
+        <div style={{ fontSize: 19, fontWeight: isUser ? 600 : 700, lineHeight: 1.3, letterSpacing: "-0.02em", color: "#000" }}>
+          <TappableText text={text} onWord={onWord} />
+        </div>
       </div>
     </div>
   );
@@ -45,6 +69,30 @@ export default function Talk({ nav }) {
   const [callActive, setCallActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState(null);
+
+  // Tap-to-define popup (display-layer only; independent of the voice pipeline).
+  const [popup, setPopup] = useState(null); // { word, left, top, placeAbove, width }
+  const [entry, setEntry] = useState({ loading: false });
+  const { langId } = useTutorView();
+
+  const onWord = (word, e) => {
+    e.stopPropagation();
+    const frame = e.currentTarget.closest(".nto-frame");
+    const wr = e.currentTarget.getBoundingClientRect();
+    const fr = frame ? frame.getBoundingClientRect() : { left: 0, top: 0, width: 390, height: 844 };
+    const width = 240;
+    let left = wr.left - fr.left + wr.width / 2 - width / 2;
+    left = Math.max(8, Math.min(left, fr.width - width - 8));
+    const belowY = wr.bottom - fr.top + 8;
+    const placeAbove = belowY + 150 > fr.height; // flip above near the bottom
+    const top = placeAbove ? wr.top - fr.top - 8 : belowY;
+    setPopup({ word, left, top, placeAbove, width });
+    setEntry({ loading: true });
+    lookupWord(word, langId)
+      .then((r) => setEntry({ loading: false, ...r }))
+      .catch(() => setEntry({ loading: false, error: true }));
+  };
+  const closePopup = () => setPopup(null);
 
   const feedRef = useRef(null);
 
@@ -186,8 +234,8 @@ export default function Talk({ nav }) {
               <div style={cardSoft}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
                 <div style={{ fontSize: 21, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
-                  ¿Por qué llegaste tarde a la{" "}
-                  <span style={{ textDecoration: "underline", textDecorationStyle: "dotted", textDecorationColor: "#c7c7cc", textUnderlineOffset: 4, cursor: "pointer" }}>reunión</span>?
+                  <TappableText text="¿Por qué llegaste tarde a la " onWord={onWord} />
+                  <span onClick={(e) => onWord("reunión", e)} style={{ textDecoration: "underline", textDecorationStyle: "dotted", textDecorationColor: "#c7c7cc", textUnderlineOffset: 4, cursor: "pointer" }}>reunión</span>?
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8 }}>Why were you late to the meeting?</div>
               </div>
@@ -198,9 +246,9 @@ export default function Talk({ nav }) {
               <div style={{ ...cardSoft, background: "#E5E5EA" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase", marginBottom: 5, textAlign: "right" }}>You</div>
                 <div style={{ fontSize: 21, fontWeight: 600, lineHeight: 1.36, letterSpacing: "-0.02em", color: "#000" }}>
-                  Lo siento, estoy muy{" "}
-                  <span style={{ background: "#ff3b30", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: 6, WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>embarazada</span>{" "}
-                  por llegar tarde.
+                  <TappableText text="Lo siento, estoy muy " onWord={onWord} />
+                  <span style={{ background: "#ff3b30", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: 6, WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>embarazada</span>
+                  <TappableText text=" por llegar tarde." onWord={onWord} />
                 </div>
               </div>
             </div>
@@ -210,8 +258,9 @@ export default function Talk({ nav }) {
               <div style={cardSoft}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
                 <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
-                  Acabas de decir que estás embarazada. Eres un hombre de 25 años. La palabra es{" "}
-                  <span style={{ fontStyle: "italic" }}>avergonzado</span>. Repítelo.
+                  <TappableText text="Acabas de decir que estás embarazada. Eres un hombre de 25 años. La palabra es " onWord={onWord} />
+                  <span onClick={(e) => onWord("avergonzado", e)} style={{ fontStyle: "italic", cursor: "pointer" }}>avergonzado</span>
+                  <TappableText text=". Repítelo." onWord={onWord} />
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 9, lineHeight: 1.42 }}>
                   You just said you are pregnant. You are a 25-year-old man. The word is avergonzado. Repeat it.
@@ -224,7 +273,7 @@ export default function Talk({ nav }) {
             Listening… say something in Spanish.
           </div>
         ) : (
-          messages.map((m, i) => <TranscriptBubble key={i} role={m.role} text={m.text} />)
+          messages.map((m, i) => <TranscriptBubble key={i} role={m.role} text={m.text} onWord={onWord} />)
         )}
       </div>
 
@@ -274,6 +323,50 @@ export default function Talk({ nav }) {
           </button>
         </div>
       </div>
+
+      {/* TAP-TO-DEFINE POPUP (display-layer only) */}
+      {popup && (
+        <>
+          {/* outside-tap catcher */}
+          <div onClick={closePopup} style={{ position: "absolute", inset: 0, zIndex: 100 }} />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: "absolute",
+              left: popup.left,
+              top: popup.top,
+              width: popup.width,
+              zIndex: 101,
+              background: "#fff",
+              border: "1px solid rgba(0,0,0,0.05)",
+              borderRadius: 20,
+              boxShadow: "0 8px 30px -6px rgba(0,0,0,0.25)",
+              padding: "14px 16px",
+              boxSizing: "border-box",
+              ...(popup.placeAbove ? { transform: "translateY(-100%)" } : null),
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#000" }}>{popup.word}</div>
+            {entry.loading ? (
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 6 }}>Looking it up…</div>
+            ) : entry.notFound || entry.error ? (
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 6 }}>No definition found.</div>
+            ) : (
+              <>
+                {entry.pos && (
+                  <div style={{ fontSize: 12, fontStyle: "italic", color: "#8e8e93", marginTop: 2 }}>{entry.pos}</div>
+                )}
+                {entry.english && (
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#000", marginTop: 8 }}>{entry.english}</div>
+                )}
+                {entry.definition && (
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 6, lineHeight: 1.4 }}>{entry.definition}</div>
+                )}
+              </>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }
