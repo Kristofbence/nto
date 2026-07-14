@@ -2,7 +2,7 @@
 // Finishing (or Skip) navigates to Home. Ported from Not The Owl Onboarding.dc.html.
 import { useRef, useState } from "react";
 import { ChevronLeft, LockIcon, CheckIcon } from "../components/icons";
-import { useSettings } from "../settings";
+import { useSettings, LANG_TUTORS } from "../settings";
 
 const LANGS = [
   { id: "es", flag: "🇪🇸", name: "Spanish", note: "500M speakers. None impressed." },
@@ -55,12 +55,14 @@ export default function Onboarding({ nav }) {
   const dragMove = (e) => { if (dragging.current) setFromClientX(e.clientX); };
   const dragEnd = () => { dragging.current = false; };
 
+  const spanish = lang === "es"; // only Spanish has tiers today
+
   const next = (e) => {
     e.preventDefault();
     if (step < 2) { setStep((s) => s + 1); return; }
-    if (dial === 0) { alert("Paywall\n\nUnlock Nice — Pro"); return; }
+    if (spanish && dial === 0) { alert("Paywall\n\nUnlock Nice — Pro"); return; }
     // Persist the chosen tutor config to the shared store before entering the app.
-    update({ roast: dial, levelIdx: level, langId: lang });
+    update({ roast: spanish ? dial : 2, levelIdx: level, langId: lang });
     nav && nav("home");
   };
   const back = (e) => { e.preventDefault(); if (step > 0) setStep((s) => s - 1); };
@@ -74,7 +76,7 @@ export default function Onboarding({ nav }) {
     transition: "left 0.22s cubic-bezier(0.22,1,0.36,1),border-color 0.2s ease",
     ...(dial === 2 ? { animation: "ntoKnob 2s ease-in-out infinite" } : {}),
   };
-  const ctaLabel = step < 2 ? "Continue →" : dial === 0 ? "Unlock Nice · Pro" : "Start suffering →";
+  const ctaLabel = step < 2 ? "Continue →" : spanish && dial === 0 ? "Unlock Nice · Pro" : "Start suffering →";
 
   const headline = { fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "#000", lineHeight: 1.14 };
   const subtitle = { fontSize: 14, fontWeight: 500, color: "#6b6b70", marginTop: 8 };
@@ -158,8 +160,29 @@ export default function Onboarding({ nav }) {
           </div>
         )}
 
-        {/* STEP 3 · TUTOR DIAL */}
-        {step === 2 && (
+        {/* STEP 3 · TUTOR — single tutor for non-Spanish languages */}
+        {step === 2 && !spanish && (
+          <div key="s3n" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 20 }}>
+            <div>
+              <div style={headline}>Meet your tutor.</div>
+              <div style={subtitle}>One tutor for this language — more tiers coming.</div>
+            </div>
+            <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", padding: 18 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>
+                {(LANG_TUTORS[lang] && LANG_TUTORS[lang].name) || "Your tutor"}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 6 }}>
+                {LANGS.find((l) => l.id === lang)?.name} · your neighbor, unimpressed
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.4 }}>
+                Roast tiers (Harsh / Brutal / Merciless) are Spanish-only for now.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 · TUTOR DIAL (Spanish) */}
+        {step === 2 && spanish && (
           <div key="s3" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 20 }}>
             <div>
               <div style={headline}>Choose your suffering.</div>

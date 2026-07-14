@@ -24,6 +24,28 @@ export const LANGS = {
   pt: { name: "Portuguese", flag: "🇵🇹" },
 };
 
+// Single-tutor languages: one persona regardless of tier.
+export const LANG_TUTORS = {
+  it: { name: "Il Vicino" },
+  fr: { name: "Le Voisin" },
+  de: { name: "Der Nachbar" },
+};
+
+// Only Spanish has multiple tiers today.
+export function langHasTiers(langId) {
+  return langId === "es";
+}
+
+// The persona to display for a (language, tier). Spanish varies by tier; the
+// single-tutor languages return their one persona with no tier shown.
+export function resolvePersona(langId, roast) {
+  if (langId === "es") return { ...TUTORS[roast], hasTier: true };
+  const t = LANG_TUTORS[langId];
+  if (t) return { name: t.name, tier: "", heat: "#8e8e93", hasTier: false };
+  // Unknown language (e.g. not-yet-wired pt): neutral fallback, no tier.
+  return { name: (LANGS[langId]?.name || "Tutor"), tier: "", heat: "#8e8e93", hasTier: false };
+}
+
 // `scenario` is transient (the chosen scenario title, "" = free conversation).
 const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es", showTranslations: true, scenario: "" }; // Brutal · Advanced · Spanish
 
@@ -72,7 +94,8 @@ export function useTutorView() {
   const { settings } = useSettings();
   return {
     ...settings,
-    tutor: TUTORS[settings.roast],
+    tutor: resolvePersona(settings.langId, settings.roast),
+    hasTiers: langHasTiers(settings.langId),
     levelName: LEVELS[settings.levelIdx],
     lang: LANGS[settings.langId] || LANGS.es,
   };

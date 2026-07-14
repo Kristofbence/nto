@@ -133,9 +133,13 @@ export default function Home({ nav }) {
           }}
         >
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            <span style={{ color: "#000" }}>{tutor.name}</span>{" "}
-            <span style={{ color: "#c7c7cc" }}>·</span>{" "}
-            <span style={{ color: tutor.heat }}>{tutor.tier}</span>
+            <span style={{ color: "#000" }}>{tutor.name}</span>
+            {tutor.hasTier && (
+              <>
+                {" "}<span style={{ color: "#c7c7cc" }}>·</span>{" "}
+                <span style={{ color: tutor.heat }}>{tutor.tier}</span>
+              </>
+            )}
           </div>
           <div key={g.es} style={{ animation: "ntoFade 0.4s ease both", marginTop: 6 }}>
             <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
@@ -212,7 +216,9 @@ export default function Home({ nav }) {
             </div>
             <div style={{ marginTop: "auto", paddingTop: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: "#000", lineHeight: 1 }}>{tutor.name}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tutor.heat, marginTop: 5 }}>{tutor.tier}</div>
+              {tutor.hasTier && (
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tutor.heat, marginTop: 5 }}>{tutor.tier}</div>
+              )}
               <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>{lang.name} · {levelName}</div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon } from "../components/icons";
 import { useTutorView } from "../settings";
+import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
@@ -17,17 +18,6 @@ const Vapi = typeof VapiPkg === "function" ? VapiPkg : VapiPkg.default;
 
 // Public key — safe to ship in front-end code. NEVER put a private key here.
 const VAPI_PUBLIC_KEY = "fb6a87e8-4feb-4cbd-ade2-4ba12f74ade9";
-
-// One assistant per roast tier. Index matches TUTORS in settings.jsx:
-// 0 Nice · 1 Harsh · 2 Brutal · 3 Merciless. Nice isn't built yet → fall back
-// to Harsh so we never crash.
-const HARSH_ID = "fb6f1f13-b002-4317-be54-063c56c18dc4";
-const ASSISTANT_BY_ROAST = {
-  0: HARSH_ID, // Nice → fallback
-  1: HARSH_ID, // Harsh
-  2: "53ae6abb-a1b2-49ca-9fee-00556a0938cd", // Brutal (default)
-  3: "b4c32128-b2a2-4a89-b8ae-7f33c6026bc4", // Merciless
-};
 
 const cardSoft = {
   maxWidth: "85%",
@@ -278,9 +268,9 @@ export default function Talk({ nav }) {
     }
     try {
       setStatus("Connecting…");
-      // Pick the tutor by the current roast level; pass the student's level (and
-      // any chosen scenario) so the assistant's {{level}} / {{scenario}} fill in.
-      const assistantId = ASSISTANT_BY_ROAST[roast] ?? HARSH_ID;
+      // Pick the tutor by (language, tier); pass the student's level (and any
+      // chosen scenario) so the assistant's {{level}} / {{scenario}} fill in.
+      const assistantId = pickAssistant(langId, roast);
       const overrides = {
         variableValues: {
           level: (levelName || "").toLowerCase(),

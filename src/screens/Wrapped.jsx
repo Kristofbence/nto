@@ -47,7 +47,7 @@ export default function Wrapped({ nav }) {
               <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your Spanish</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 4 }}>This week · Jul 7–13</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 3, whiteSpace: "nowrap" }}>
-                Roasted by {tutor.name} · <span style={{ fontWeight: 700, color: tutor.heat }}>{tutor.tier}</span>
+                Roasted by {tutor.name}{tutor.hasTier && <> · <span style={{ fontWeight: 700, color: tutor.heat }}>{tutor.tier}</span></>}
               </div>
             </div>
           </div>
