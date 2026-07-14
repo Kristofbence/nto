@@ -12,6 +12,7 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@vapi-ai/web": "^2.6.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

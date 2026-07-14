@@ -1,12 +1,131 @@
-// TALK · full-screen voice session (no tab bar). Tutor/user chat feed with the
-// embarazada false-friend roast, plus dictionary · mic · skip action zone.
-// Mic is a press-to-listen visual stub (Vapi voice is a later stage).
-// Ported from Not The Owl Chat.dc.html.
-import { useState } from "react";
+// TALK · full-screen voice session (no tab bar). The mic now starts/stops a REAL
+// Vapi voice call with the Spanish tutor; final transcripts stream into the feed.
+// Design/layout is unchanged from the prototype — only behavior is wired up.
+import { useEffect, useRef, useState } from "react";
+import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon, SkipIcon } from "../components/icons";
 
+// @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
+// import can arrive as the class itself or wrapped as { default: class }. Unwrap
+// to the actual constructor either way.
+const Vapi = typeof VapiPkg === "function" ? VapiPkg : VapiPkg.default;
+
+// Public key — safe to ship in front-end code. NEVER put a private key here.
+const VAPI_PUBLIC_KEY = "fb6a87e8-4feb-4cbd-ade2-4ba12f74ade9";
+const SPANISH_ASSISTANT_ID = "fb6f1f13-b002-4317-be54-063c56c18dc4";
+
+const cardSoft = {
+  maxWidth: "85%",
+  background: "#fff",
+  border: "1px solid rgba(0,0,0,0.05)",
+  borderRadius: 20,
+  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+  padding: "15px 16px 16px",
+};
+
+// A live transcript bubble — tutor (assistant) white/left, user grey/right.
+function TranscriptBubble({ role, text }) {
+  const isUser = role === "user";
+  return (
+    <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
+      <div style={{ ...cardSoft, ...(isUser ? { background: "#E5E5EA" } : null) }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: isUser ? "#8e8e93" : "#a1a1a6", textTransform: "uppercase", marginBottom: 5, textAlign: isUser ? "right" : "left" }}>
+          {isUser ? "You" : "Tutor"}
+        </div>
+        <div style={{ fontSize: 19, fontWeight: isUser ? 600 : 700, lineHeight: 1.3, letterSpacing: "-0.02em", color: "#000" }}>{text}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function Talk({ nav }) {
-  const [listening, setListening] = useState(false);
+  // messages === null → show the pre-seeded demo exchange (idle/empty state).
+  // Once a real call starts we clear it to [] and append live transcripts.
+  const [messages, setMessages] = useState(null);
+  const [callActive, setCallActive] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+  const [status, setStatus] = useState(null);
+
+  const feedRef = useRef(null);
+
+  // One Vapi client for the life of this screen.
+  const vapiRef = useRef(null);
+  if (!vapiRef.current) vapiRef.current = new Vapi(VAPI_PUBLIC_KEY);
+
+  // Subscribe to Vapi events once.
+  useEffect(() => {
+    const vapi = vapiRef.current;
+
+    const onCallStart = () => {
+      setStatus(null);
+      setMessages([]); // clear the demo bubbles so real transcripts show
+      setSeconds(0);
+      setCallActive(true);
+    };
+    const onCallEnd = () => {
+      setCallActive(false);
+    };
+    const onMessage = (m) => {
+      // Only commit FINAL transcripts to the feed (ignore partial/interim).
+      if (m?.type === "transcript" && m?.transcriptType === "final" && m?.transcript) {
+        setMessages((prev) => [...(prev || []), { role: m.role, text: m.transcript }]);
+      }
+    };
+    const onError = (e) => {
+      console.error("[Vapi] error:", e);
+      setCallActive(false);
+      const msg = e?.errorMsg || e?.message || (typeof e === "string" ? e : "Something went wrong. Try again.");
+      setStatus(msg);
+    };
+
+    vapi.on("call-start", onCallStart);
+    vapi.on("call-end", onCallEnd);
+    vapi.on("message", onMessage);
+    vapi.on("error", onError);
+
+    return () => {
+      vapi.off("call-start", onCallStart);
+      vapi.off("call-end", onCallEnd);
+      vapi.off("message", onMessage);
+      vapi.off("error", onError);
+      try { vapi.stop(); } catch { /* noop */ }
+    };
+  }, []);
+
+  // Session timer: count up while the call is live.
+  useEffect(() => {
+    if (!callActive) return;
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [callActive]);
+
+  // Auto-scroll the feed to the newest message.
+  useEffect(() => {
+    const el = feedRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  const toggleCall = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const vapi = vapiRef.current;
+    if (callActive) {
+      vapi.stop();
+      return;
+    }
+    try {
+      setStatus("Connecting…");
+      await vapi.start(SPANISH_ASSISTANT_ID);
+    } catch (err) {
+      console.error("[Vapi] start failed:", err);
+      setStatus("Could not start. Allow mic access and try again.");
+    }
+  };
+
+  const exit = (e) => {
+    e.preventDefault();
+    try { vapiRef.current.stop(); } catch { /* noop */ }
+    if (nav) nav("home");
+  };
 
   const micStyle = {
     width: 80,
@@ -23,19 +142,15 @@ export default function Talk({ nav }) {
     outline: "none",
     WebkitTapHighlightColor: "transparent",
     userSelect: "none",
-    ...(listening
+    ...(callActive
       ? { boxShadow: "0 8px 22px -4px rgba(0,0,0,0.28)", animation: "ntoPress 1s ease-in-out infinite", transform: "scale(0.94)" }
       : { boxShadow: "0 8px 20px -5px rgba(0,0,0,0.22),0 2px 6px rgba(0,0,0,0.12)" }),
   };
 
-  const cardSoft = {
-    maxWidth: "85%",
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.05)",
-    borderRadius: 20,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    padding: "15px 16px 16px",
-  };
+  // Idle (before any call) keeps the prototype's placeholder time; a real call
+  // shows the live count-up.
+  const mmss = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+  const timerText = messages === null ? "14:27" : mmss;
 
   return (
     <>
@@ -52,7 +167,7 @@ export default function Talk({ nav }) {
           background: "#fff",
         }}
       >
-        <div onClick={(e) => { e.preventDefault(); nav && nav("home"); }} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <div onClick={exit} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
           <CloseIcon size={20} />
           <span style={{ fontSize: 24, lineHeight: 1 }}>🇪🇸</span>
         </div>
@@ -63,44 +178,54 @@ export default function Talk({ nav }) {
       </div>
 
       {/* CHAT FEED */}
-      <div style={{ flex: 1, overflow: "hidden", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
-        {/* MSG 1 · TUTOR */}
-        <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
-          <div style={cardSoft}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
-            <div style={{ fontSize: 21, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
-              ¿Por qué llegaste tarde a la{" "}
-              <span style={{ textDecoration: "underline", textDecorationStyle: "dotted", textDecorationColor: "#c7c7cc", textUnderlineOffset: 4, cursor: "pointer" }}>reunión</span>?
+      <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
+        {messages === null ? (
+          <>
+            {/* MSG 1 · TUTOR */}
+            <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
+              <div style={cardSoft}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
+                <div style={{ fontSize: 21, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
+                  ¿Por qué llegaste tarde a la{" "}
+                  <span style={{ textDecoration: "underline", textDecorationStyle: "dotted", textDecorationColor: "#c7c7cc", textUnderlineOffset: 4, cursor: "pointer" }}>reunión</span>?
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8 }}>Why were you late to the meeting?</div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8 }}>Why were you late to the meeting?</div>
-          </div>
-        </div>
 
-        {/* MSG 2 · USER */}
-        <div style={{ display: "flex", justifyContent: "flex-end", animation: "ntoMsgIn 0.3s ease 0.05s both" }}>
-          <div style={{ ...cardSoft, background: "#E5E5EA" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase", marginBottom: 5, textAlign: "right" }}>You</div>
-            <div style={{ fontSize: 21, fontWeight: 600, lineHeight: 1.36, letterSpacing: "-0.02em", color: "#000" }}>
-              Lo siento, estoy muy{" "}
-              <span style={{ background: "#ff3b30", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: 6, WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>embarazada</span>{" "}
-              por llegar tarde.
+            {/* MSG 2 · USER */}
+            <div style={{ display: "flex", justifyContent: "flex-end", animation: "ntoMsgIn 0.3s ease 0.05s both" }}>
+              <div style={{ ...cardSoft, background: "#E5E5EA" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase", marginBottom: 5, textAlign: "right" }}>You</div>
+                <div style={{ fontSize: 21, fontWeight: 600, lineHeight: 1.36, letterSpacing: "-0.02em", color: "#000" }}>
+                  Lo siento, estoy muy{" "}
+                  <span style={{ background: "#ff3b30", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: 6, WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>embarazada</span>{" "}
+                  por llegar tarde.
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* MSG 3 · TUTOR ROAST */}
-        <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease 0.1s both" }}>
-          <div style={cardSoft}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
-            <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
-              Acabas de decir que estás embarazada. Eres un hombre de 25 años. La palabra es{" "}
-              <span style={{ fontStyle: "italic" }}>avergonzado</span>. Repítelo.
+            {/* MSG 3 · TUTOR ROAST */}
+            <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease 0.1s both" }}>
+              <div style={cardSoft}>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
+                <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
+                  Acabas de decir que estás embarazada. Eres un hombre de 25 años. La palabra es{" "}
+                  <span style={{ fontStyle: "italic" }}>avergonzado</span>. Repítelo.
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 9, lineHeight: 1.42 }}>
+                  You just said you are pregnant. You are a 25-year-old man. The word is avergonzado. Repeat it.
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 9, lineHeight: 1.42 }}>
-              You just said you are pregnant. You are a 25-year-old man. The word is avergonzado. Repeat it.
-            </div>
+          </>
+        ) : messages.length === 0 ? (
+          <div style={{ margin: "auto", textAlign: "center", fontSize: 14, fontWeight: 500, color: "#8e8e93", padding: "0 24px", lineHeight: 1.4 }}>
+            Listening… say something in Spanish.
           </div>
-        </div>
+        ) : (
+          messages.map((m, i) => <TranscriptBubble key={i} role={m.role} text={m.text} />)
+        )}
       </div>
 
       {/* ACTION ZONE */}
@@ -113,14 +238,17 @@ export default function Talk({ nav }) {
           WebkitBackdropFilter: "blur(8px)",
         }}
       >
+        {/* status / waveform strip (fixed height — no layout shift) */}
         <div style={{ height: 16, display: "flex", justifyContent: "center", alignItems: "flex-end", marginBottom: 10 }}>
-          {listening && (
+          {callActive ? (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 16 }}>
               {[0, 0.12, 0.24, 0.36, 0.48].map((d, i) => (
                 <span key={i} style={{ width: 4, height: 16, borderRadius: 2, background: "#34c759", transformOrigin: "bottom", animation: `ntoWave 0.7s ease-in-out ${d}s infinite` }} />
               ))}
             </div>
-          )}
+          ) : status ? (
+            <span style={{ fontSize: 11, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>{status}</span>
+          ) : null}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32 }}>
@@ -132,17 +260,10 @@ export default function Talk({ nav }) {
           </button>
 
           <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-            <button
-              onMouseDown={() => setListening(true)}
-              onMouseUp={() => setListening(false)}
-              onMouseLeave={() => setListening(false)}
-              onTouchStart={() => setListening(true)}
-              onTouchEnd={() => setListening(false)}
-              style={micStyle}
-            >
+            <button onClick={toggleCall} aria-label={callActive ? "Stop call" : "Start call"} style={micStyle}>
               <MicIcon size={30} />
             </button>
-            <span style={{ fontSize: 19, fontWeight: 600, color: "#1c1c1e", fontVariantNumeric: "tabular-nums", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", letterSpacing: "0.01em" }}>14:27</span>
+            <span style={{ fontSize: 19, fontWeight: 600, color: "#1c1c1e", fontVariantNumeric: "tabular-nums", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", letterSpacing: "0.01em" }}>{timerText}</span>
           </div>
 
           <button
