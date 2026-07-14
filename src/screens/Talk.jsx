@@ -182,10 +182,18 @@ export default function Talk({ nav }) {
   const addToVocabulary = (word) => {
     try {
       const key = "nto.vocabulary";
-      const list = JSON.parse(localStorage.getItem(key) || "[]");
-      if (!list.includes(word)) list.push(word);
+      // Normalize any legacy bare-string entries to { word, def }.
+      const raw = JSON.parse(localStorage.getItem(key) || "[]");
+      const list = raw
+        .map((e) => (typeof e === "string" ? { word: e, def: "" } : e))
+        .filter((e) => e && e.word);
+      // Save the definition we already have in the popup (no re-fetch needed).
+      const def = entry.english || entry.definition || "";
+      const idx = list.findIndex((e) => e.word === word);
+      if (idx >= 0) list.splice(idx, 1); // re-adding moves it to most-recent
+      list.push({ word, def });
       localStorage.setItem(key, JSON.stringify(list));
-      console.log("[vocabulary] added:", word, "→", list);
+      console.log("[vocabulary] added:", word, def);
     } catch (err) {
       console.warn("[vocabulary] save failed:", err);
     }
