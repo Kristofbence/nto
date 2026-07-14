@@ -137,7 +137,7 @@ export default function Talk({ nav }) {
   const [entry, setEntry] = useState({ loading: false });
   const [added, setAdded] = useState(false); // "+ Add to vocabulary" feedback
   const dismissTimer = useRef(null);
-  const { langId, showTranslations, roast, levelName, scenario } = useTutorView();
+  const { langId, lang, showTranslations, roast, levelName, scenario } = useTutorView();
 
   const closePopup = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
@@ -339,7 +339,7 @@ export default function Talk({ nav }) {
       >
         <div onClick={exit} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
           <CloseIcon size={20} />
-          <span style={{ fontSize: 24, lineHeight: 1 }}>🇪🇸</span>
+          <span style={{ fontSize: 24, lineHeight: 1 }}>{lang.flag}</span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", color: "#a1a1a6", textTransform: "uppercase" }}>Survival</span>
@@ -351,7 +351,7 @@ export default function Talk({ nav }) {
       <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
         {messages.length === 0 ? (
           <div style={{ margin: "auto", textAlign: "center", fontSize: 14, fontWeight: 500, color: "#8e8e93", padding: "0 24px", lineHeight: 1.4 }}>
-            {callActive ? "Listening… say something in Spanish." : "Tap the mic to start a conversation."}
+            {callActive ? `Listening… say something in ${lang.name}.` : "Tap the mic to start a conversation."}
           </div>
         ) : (
           messages.map((m, i) => (

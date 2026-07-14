@@ -17,10 +17,10 @@ const REPORT = [
 ];
 
 export default function Wrapped({ nav }) {
-  const { tutor } = useTutorView();
+  const { tutor, lang } = useTutorView();
   const share = (e) => {
     if (e) e.preventDefault();
-    const data = { title: "Not The Owl", text: "My Spanish this week: THE CONFIDENTLY WRONG. +9% fluency." };
+    const data = { title: "Not The Owl", text: `My ${lang.name} this week: THE CONFIDENTLY WRONG. +9% fluency.` };
     if (navigator.share) navigator.share(data).catch(() => {});
     else alert("Share sheet\n\n" + data.text);
   };
@@ -44,7 +44,7 @@ export default function Wrapped({ nav }) {
               <FlameIcon size={21} stroke="#fff" strokeWidth={2} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your Spanish</div>
+              <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your {lang.name}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 4 }}>This week · Jul 7–13</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 3, whiteSpace: "nowrap" }}>
                 Roasted by {tutor.name}{tutor.hasTier && <> · <span style={{ fontWeight: 700, color: tutor.heat }}>{tutor.tier}</span></>}
@@ -131,7 +131,7 @@ export default function Wrapped({ nav }) {
               <TrophyIcon />
             </div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1, marginTop: 14 }}>TOP <span style={{ color: "#ff3b30" }}>3%</span></div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 8, lineHeight: 1.3 }}>Most Roasted<br />of Spanish learners</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 8, lineHeight: 1.3 }}>Most Roasted<br />of {lang.name} learners</div>
           </div>
 
           {/* AVG PACE */}

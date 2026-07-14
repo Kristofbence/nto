@@ -2,7 +2,7 @@
 // list of nationality-tagged scenarios. Every row / the START / the wheel lead
 // into a Talk session. Ported from Scenarios.dc.html.
 import TabBar from "../components/TabBar";
-import { useSettings } from "../settings";
+import { useSettings, LANGS } from "../settings";
 import { SCENARIOS as SCENARIO_DATA, SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import {
   SpinArrows,
@@ -37,7 +37,8 @@ function Dots({ level }) {
 }
 
 export default function Scenarios({ nav }) {
-  const { update } = useSettings();
+  const { settings, update } = useSettings();
+  const lang = LANGS[settings.langId] || LANGS.es;
   // Start a session, passing the full scenario text ("" = random/free for Spin).
   const start = (text) => (e) => {
     e.preventDefault();
@@ -58,9 +59,9 @@ export default function Scenarios({ nav }) {
         {/* HEADER ROW · title + spin wheel */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 4px 0" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>🇪🇸 Scenarios</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>{lang.flag} Scenarios</div>
             <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4, color: "#6b6b70", marginTop: 6 }}>
-              Pick your fight — or spin for a random real-life scenario to practice your Spanish.
+              Pick your fight — or spin for a random real-life scenario to practice your {lang.name}.
             </div>
           </div>
           <a href="#" onClick={goTalk} style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
