@@ -3,7 +3,7 @@
 // live-data tiles. Ported pixel-for-pixel from Home.dc.html.
 import { useEffect, useState } from "react";
 import TabBar from "../components/TabBar";
-import { useTutorView } from "../settings";
+import { useTutorView, useSettings } from "../settings";
 import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
   MicIcon,
@@ -49,6 +49,13 @@ export default function Home({ nav }) {
 
   // Current tutor / level / language from the shared, persisted store.
   const { tutor, levelName, lang } = useTutorView();
+  const { update } = useSettings();
+  // Start a Talk session, setting the scenario ("" = free conversation).
+  const startTalk = (scenario) => (e) => {
+    e.preventDefault();
+    update({ scenario });
+    if (nav) nav("talk");
+  };
 
   const micStyle = {
     width: 88,
@@ -153,7 +160,7 @@ export default function Home({ nav }) {
               <circle cx="59" cy="59" r="53" fill="none" stroke="#3a3a3c" strokeWidth="7" strokeLinecap="round" strokeDasharray="176.5 333" />
             </svg>
             <button
-              onClick={go("talk")}
+              onClick={startTalk("")}
               onMouseDown={() => setListening(true)}
               onMouseUp={() => setListening(false)}
               onMouseLeave={() => setListening(false)}
@@ -223,7 +230,7 @@ export default function Home({ nav }) {
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>Brutal</span>
             </div>
             <button
-              onClick={go("talk")}
+              onClick={startTalk("The Barcelona Bar")}
               style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
             >
               <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>

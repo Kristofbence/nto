@@ -16,7 +16,17 @@ const Vapi = typeof VapiPkg === "function" ? VapiPkg : VapiPkg.default;
 
 // Public key — safe to ship in front-end code. NEVER put a private key here.
 const VAPI_PUBLIC_KEY = "fb6a87e8-4feb-4cbd-ade2-4ba12f74ade9";
-const SPANISH_ASSISTANT_ID = "fb6f1f13-b002-4317-be54-063c56c18dc4";
+
+// One assistant per roast tier. Index matches TUTORS in settings.jsx:
+// 0 Nice · 1 Harsh · 2 Brutal · 3 Merciless. Nice isn't built yet → fall back
+// to Harsh so we never crash.
+const HARSH_ID = "fb6f1f13-b002-4317-be54-063c56c18dc4";
+const ASSISTANT_BY_ROAST = {
+  0: HARSH_ID, // Nice → fallback
+  1: HARSH_ID, // Harsh
+  2: "53ae6abb-a1b2-49ca-9fee-00556a0938cd", // Brutal (default)
+  3: "b4c32128-b2a2-4a89-b8ae-7f33c6026bc4", // Merciless
+};
 
 const cardSoft = {
   maxWidth: "85%",
@@ -98,7 +108,7 @@ export default function Talk({ nav }) {
   const [entry, setEntry] = useState({ loading: false });
   const [added, setAdded] = useState(false); // "+ Add to dictionary" feedback
   const dismissTimer = useRef(null);
-  const { langId, showTranslations } = useTutorView();
+  const { langId, showTranslations, roast, levelName, scenario } = useTutorView();
 
   const closePopup = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
@@ -221,7 +231,16 @@ export default function Talk({ nav }) {
     }
     try {
       setStatus("Connecting…");
-      await vapi.start(SPANISH_ASSISTANT_ID);
+      // Pick the tutor by the current roast level; pass the student's level (and
+      // any chosen scenario) so the assistant's {{level}} / {{scenario}} fill in.
+      const assistantId = ASSISTANT_BY_ROAST[roast] ?? HARSH_ID;
+      const overrides = {
+        variableValues: {
+          level: (levelName || "").toLowerCase(),
+          scenario: scenario || "",
+        },
+      };
+      await vapi.start(assistantId, overrides);
     } catch (err) {
       console.error("[Vapi] start failed:", err);
       setStatus("Could not start. Allow mic access and try again.");

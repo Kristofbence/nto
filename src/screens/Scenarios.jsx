@@ -2,6 +2,7 @@
 // list of nationality-tagged scenarios. Every row / the START / the wheel lead
 // into a Talk session. Ported from Scenarios.dc.html.
 import TabBar from "../components/TabBar";
+import { useSettings } from "../settings";
 import {
   SpinArrows,
   WineIcon,
@@ -44,7 +45,14 @@ function Dots({ level }) {
 }
 
 export default function Scenarios({ nav }) {
-  const goTalk = (e) => { e.preventDefault(); nav && nav("talk"); };
+  const { update } = useSettings();
+  // Start a session with the chosen scenario title (""=random/free for Spin).
+  const start = (title) => (e) => {
+    e.preventDefault();
+    update({ scenario: title });
+    if (nav) nav("talk");
+  };
+  const goTalk = start(""); // the Spin wheel → random scenario
 
   return (
     <>
@@ -107,7 +115,7 @@ export default function Scenarios({ nav }) {
             ))}
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase", marginLeft: 4 }}>Brutal</span>
           </div>
-          <button onClick={goTalk} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
+          <button onClick={start("The Barcelona Bar")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
             <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.06em", color: "#fff", textTransform: "uppercase" }}>Start →</span>
           </button>
         </div>
@@ -124,7 +132,7 @@ export default function Scenarios({ nav }) {
             return (
               <div
                 key={s.title}
-                onClick={goTalk}
+                onClick={start(s.title)}
                 style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 16px", borderBottom: i < SCENARIOS.length - 1 ? "1px solid #d1d1d6" : "none", cursor: "pointer" }}
               >
                 <Icon style={{ flex: "none" }} />

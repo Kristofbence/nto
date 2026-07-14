@@ -24,7 +24,8 @@ export const LANGS = {
   pt: { name: "Portuguese", flag: "🇵🇹" },
 };
 
-const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es", showTranslations: true }; // Brutal · Advanced · Spanish
+// `scenario` is transient (the chosen scenario title, "" = free conversation).
+const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es", showTranslations: true, scenario: "" }; // Brutal · Advanced · Spanish
 
 function load() {
   try {
