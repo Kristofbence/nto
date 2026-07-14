@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import TabBar from "../components/TabBar";
 import { useTutorView, useSettings } from "../settings";
 import { session } from "../session";
+import { SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
   MicIcon,
@@ -233,7 +234,7 @@ export default function Home({ nav }) {
               <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>Brutal</span>
             </div>
             <button
-              onClick={startTalk("The Barcelona Bar")}
+              onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
               style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
             >
               <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>

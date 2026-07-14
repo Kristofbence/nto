@@ -3,6 +3,7 @@
 // into a Talk session. Ported from Scenarios.dc.html.
 import TabBar from "../components/TabBar";
 import { useSettings } from "../settings";
+import { SCENARIOS as SCENARIO_DATA, SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import {
   SpinArrows,
   WineIcon,
@@ -21,18 +22,9 @@ import {
 // difficulty: 1 easy(green) · 2 medium(amber) · 3 brutal(red)
 const HEAT = { 1: "#34c759", 2: "#f5a623", 3: "#ff3b30" };
 
-const SCENARIOS = [
-  { title: "Meeting Her Colombian Father", level: 3, Icon: PersonIcon },
-  { title: "The Jealous Argentinian Ex", level: 3, Icon: ChatBubblesIcon },
-  { title: "Lying at the Venezuelan Border", level: 3, Icon: ShieldIcon },
-  { title: "Walk of Shame in Madrid", level: 2, Icon: DoorIcon },
-  { title: "The Bogotá Taxi Scam", level: 2, Icon: CarIcon },
-  { title: "Returning the Worn Dress in Sevilla", level: 2, Icon: TagIcon },
-  { title: "Small Talk with the Roommate", level: 2, Icon: MugIcon },
-  { title: "The Suegra's 3-Hour Lunch", level: 3, Icon: PlateIcon },
-  { title: "Picking a Fight in a Buenos Aires Café", level: 2, Icon: FlameIcon },
-  { title: "Lost in the Amazonas", level: 3, Icon: CompassIcon },
-];
+// Icons align 1:1 (by order) with SCENARIO_DATA in ../scenarios.
+const ICONS = [PersonIcon, ChatBubblesIcon, ShieldIcon, DoorIcon, CarIcon, TagIcon, MugIcon, PlateIcon, FlameIcon, CompassIcon];
+const SCENARIOS = SCENARIO_DATA.map((s, i) => ({ ...s, Icon: ICONS[i] }));
 
 function Dots({ level }) {
   return (
@@ -46,10 +38,10 @@ function Dots({ level }) {
 
 export default function Scenarios({ nav }) {
   const { update } = useSettings();
-  // Start a session with the chosen scenario title (""=random/free for Spin).
-  const start = (title) => (e) => {
+  // Start a session, passing the full scenario text ("" = random/free for Spin).
+  const start = (text) => (e) => {
     e.preventDefault();
-    update({ scenario: title });
+    update({ scenario: text });
     if (nav) nav("talk");
   };
   const goTalk = start(""); // the Spin wheel → random scenario
@@ -115,7 +107,7 @@ export default function Scenarios({ nav }) {
             ))}
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase", marginLeft: 4 }}>Brutal</span>
           </div>
-          <button onClick={start("The Barcelona Bar")} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
+          <button onClick={start(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
             <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.06em", color: "#fff", textTransform: "uppercase" }}>Start →</span>
           </button>
         </div>
@@ -132,7 +124,7 @@ export default function Scenarios({ nav }) {
             return (
               <div
                 key={s.title}
-                onClick={start(s.title)}
+                onClick={start(scenarioText(s.title, s.desc))}
                 style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 16px", borderBottom: i < SCENARIOS.length - 1 ? "1px solid #d1d1d6" : "none", cursor: "pointer" }}
               >
                 <Icon style={{ flex: "none" }} />
