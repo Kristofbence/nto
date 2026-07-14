@@ -9,6 +9,7 @@ import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
+import { cleanItalianTranscript } from "../transcriptCleanup";
 import { session } from "../session";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
@@ -377,19 +378,23 @@ export default function Talk({ nav }) {
             {callActive ? `Listening… say something in ${lang.name}.` : "Tap the mic to start a conversation."}
           </div>
         ) : (
-          messages.map((m, i) => (
-            <TranscriptBubble
-              key={i}
-              role={m.role}
-              text={bubbleText(m)}
-              finalized={m.finalized}
-              onWord={onWord}
-              showTranslation={showTranslations}
-              lang={langId}
-              // A bubble's turn is over once a later bubble exists, or the call ended.
-              ready={i < messages.length - 1 || !callActive}
-            />
-          ))
+          messages.map((m, i) => {
+            // Italian-only, display-only homophone cleanup (e.g. "6" → "sei").
+            const clean = (t) => (langId === "it" ? cleanItalianTranscript(t) : t);
+            return (
+              <TranscriptBubble
+                key={i}
+                role={m.role}
+                text={clean(bubbleText(m))}
+                finalized={clean(m.finalized)}
+                onWord={onWord}
+                showTranslation={showTranslations}
+                lang={langId}
+                // A bubble's turn is over once a later bubble exists, or the call ended.
+                ready={i < messages.length - 1 || !callActive}
+              />
+            );
+          })
         )}
       </div>
 
