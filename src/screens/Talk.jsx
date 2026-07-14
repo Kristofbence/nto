@@ -3,9 +3,10 @@
 // Design/layout is unchanged from the prototype — only behavior is wired up.
 import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
-import { CloseIcon, BookIcon, MicIcon, SkipIcon } from "../components/icons";
+import { CloseIcon, BookIcon, MicIcon } from "../components/icons";
 import { useTutorView } from "../settings";
 import { lookupWord } from "../lookup";
+import { appendTranscript, bubbleText } from "../transcriptGroup";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
 // import can arrive as the class itself or wrapped as { default: class }. Unwrap
@@ -54,7 +55,7 @@ function TranscriptBubble({ role, text, onWord }) {
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: isUser ? "#8e8e93" : "#a1a1a6", textTransform: "uppercase", marginBottom: 5, textAlign: isUser ? "right" : "left" }}>
           {isUser ? "You" : "Tutor"}
         </div>
-        <div style={{ fontSize: 19, fontWeight: isUser ? 600 : 700, lineHeight: 1.3, letterSpacing: "-0.02em", color: "#000" }}>
+        <div style={{ fontSize: 16, fontWeight: isUser ? 600 : 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
           <TappableText text={text} onWord={onWord} />
         </div>
       </div>
@@ -63,9 +64,9 @@ function TranscriptBubble({ role, text, onWord }) {
 }
 
 export default function Talk({ nav }) {
-  // messages === null → show the pre-seeded demo exchange (idle/empty state).
-  // Once a real call starts we clear it to [] and append live transcripts.
-  const [messages, setMessages] = useState(null);
+  // Conversation feed. Each item is one speaker turn: { role, finalized, partial }.
+  // Starts empty (no pre-seeded demo); real turns fill in during a call.
+  const [messages, setMessages] = useState([]);
   const [callActive, setCallActive] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [status, setStatus] = useState(null);
@@ -73,10 +74,18 @@ export default function Talk({ nav }) {
   // Tap-to-define popup (display-layer only; independent of the voice pipeline).
   const [popup, setPopup] = useState(null); // { word, left, top, placeAbove, width }
   const [entry, setEntry] = useState({ loading: false });
+  const [added, setAdded] = useState(false); // "+ Add to dictionary" feedback
+  const dismissTimer = useRef(null);
   const { langId } = useTutorView();
+
+  const closePopup = () => {
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
+    setPopup(null);
+  };
 
   const onWord = (word, e) => {
     e.stopPropagation();
+    if (dismissTimer.current) clearTimeout(dismissTimer.current);
     const frame = e.currentTarget.closest(".nto-frame");
     const wr = e.currentTarget.getBoundingClientRect();
     const fr = frame ? frame.getBoundingClientRect() : { left: 0, top: 0, width: 390, height: 844 };
@@ -88,11 +97,30 @@ export default function Talk({ nav }) {
     const top = placeAbove ? wr.top - fr.top - 8 : belowY;
     setPopup({ word, left, top, placeAbove, width });
     setEntry({ loading: true });
+    setAdded(false);
     lookupWord(word, langId)
       .then((r) => setEntry({ loading: false, ...r }))
-      .catch(() => setEntry({ loading: false, error: true }));
+      .catch(() => setEntry({ loading: false, error: true }))
+      .finally(() => {
+        // Auto-dismiss 3s after the result settles (so there's time to read it).
+        if (dismissTimer.current) clearTimeout(dismissTimer.current);
+        dismissTimer.current = setTimeout(() => setPopup(null), 3000);
+      });
   };
-  const closePopup = () => setPopup(null);
+
+  const addToDictionary = (word) => {
+    try {
+      const key = "nto.dictionary";
+      const list = JSON.parse(localStorage.getItem(key) || "[]");
+      if (!list.includes(word)) list.push(word);
+      localStorage.setItem(key, JSON.stringify(list));
+      console.log("[dictionary] added:", word, "→", list);
+    } catch (err) {
+      console.warn("[dictionary] save failed:", err);
+    }
+    setAdded(true);
+    if (dismissTimer.current) clearTimeout(dismissTimer.current); // let them see "Added"
+  };
 
   const feedRef = useRef(null);
 
@@ -106,18 +134,21 @@ export default function Talk({ nav }) {
 
     const onCallStart = () => {
       setStatus(null);
-      setMessages([]); // clear the demo bubbles so real transcripts show
+      setMessages([]); // fresh conversation
       setSeconds(0);
       setCallActive(true);
     };
     const onCallEnd = () => {
       setCallActive(false);
     };
+    // Group transcripts by speaker turn: same role → keep filling the same
+    // bubble (finals concatenate, partials grow it live); role change → new
+    // bubble. So one spoken turn renders as one growing bubble.
     const onMessage = (m) => {
-      // Only commit FINAL transcripts to the feed (ignore partial/interim).
-      if (m?.type === "transcript" && m?.transcriptType === "final" && m?.transcript) {
-        setMessages((prev) => [...(prev || []), { role: m.role, text: m.transcript }]);
-      }
+      if (m?.type !== "transcript" || !m?.transcript || !m?.role) return;
+      setMessages((prev) =>
+        appendTranscript(prev, { role: m.role, text: m.transcript, isFinal: m.transcriptType === "final" })
+      );
     };
     const onError = (e) => {
       console.error("[Vapi] error:", e);
@@ -131,6 +162,9 @@ export default function Talk({ nav }) {
     vapi.on("message", onMessage);
     vapi.on("error", onError);
 
+    // Dev-only test hook to inject transcripts (stripped from production builds).
+    if (import.meta.env.DEV) window.__ntoVapi = vapi;
+
     return () => {
       vapi.off("call-start", onCallStart);
       vapi.off("call-end", onCallEnd);
@@ -139,6 +173,9 @@ export default function Talk({ nav }) {
       try { vapi.stop(); } catch { /* noop */ }
     };
   }, []);
+
+  // Clear the popup auto-dismiss timer on unmount.
+  useEffect(() => () => { if (dismissTimer.current) clearTimeout(dismissTimer.current); }, []);
 
   // Session timer: count up while the call is live.
   useEffect(() => {
@@ -195,10 +232,8 @@ export default function Talk({ nav }) {
       : { boxShadow: "0 8px 20px -5px rgba(0,0,0,0.22),0 2px 6px rgba(0,0,0,0.12)" }),
   };
 
-  // Idle (before any call) keeps the prototype's placeholder time; a real call
-  // shows the live count-up.
-  const mmss = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-  const timerText = messages === null ? "14:27" : mmss;
+  // Session timer: 00:00 at idle, counts up during a live call.
+  const timerText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
   return (
     <>
@@ -227,53 +262,14 @@ export default function Talk({ nav }) {
 
       {/* CHAT FEED */}
       <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
-        {messages === null ? (
-          <>
-            {/* MSG 1 · TUTOR */}
-            <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
-              <div style={cardSoft}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
-                <div style={{ fontSize: 21, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
-                  <TappableText text="¿Por qué llegaste tarde a la " onWord={onWord} />
-                  <span onClick={(e) => onWord("reunión", e)} style={{ textDecoration: "underline", textDecorationStyle: "dotted", textDecorationColor: "#c7c7cc", textUnderlineOffset: 4, cursor: "pointer" }}>reunión</span>?
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8 }}>Why were you late to the meeting?</div>
-              </div>
-            </div>
-
-            {/* MSG 2 · USER */}
-            <div style={{ display: "flex", justifyContent: "flex-end", animation: "ntoMsgIn 0.3s ease 0.05s both" }}>
-              <div style={{ ...cardSoft, background: "#E5E5EA" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase", marginBottom: 5, textAlign: "right" }}>You</div>
-                <div style={{ fontSize: 21, fontWeight: 600, lineHeight: 1.36, letterSpacing: "-0.02em", color: "#000" }}>
-                  <TappableText text="Lo siento, estoy muy " onWord={onWord} />
-                  <span style={{ background: "#ff3b30", color: "#fff", fontWeight: 700, padding: "2px 8px", borderRadius: 6, WebkitBoxDecorationBreak: "clone", boxDecorationBreak: "clone" }}>embarazada</span>
-                  <TappableText text=" por llegar tarde." onWord={onWord} />
-                </div>
-              </div>
-            </div>
-
-            {/* MSG 3 · TUTOR ROAST */}
-            <div style={{ display: "flex", justifyContent: "flex-start", animation: "ntoMsgIn 0.3s ease 0.1s both" }}>
-              <div style={cardSoft}>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", marginBottom: 5 }}>Tutor</div>
-                <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
-                  <TappableText text="Acabas de decir que estás embarazada. Eres un hombre de 25 años. La palabra es " onWord={onWord} />
-                  <span onClick={(e) => onWord("avergonzado", e)} style={{ fontStyle: "italic", cursor: "pointer" }}>avergonzado</span>
-                  <TappableText text=". Repítelo." onWord={onWord} />
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 9, lineHeight: 1.42 }}>
-                  You just said you are pregnant. You are a 25-year-old man. The word is avergonzado. Repeat it.
-                </div>
-              </div>
-            </div>
-          </>
-        ) : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <div style={{ margin: "auto", textAlign: "center", fontSize: 14, fontWeight: 500, color: "#8e8e93", padding: "0 24px", lineHeight: 1.4 }}>
-            Listening… say something in Spanish.
+            {callActive ? "Listening… say something in Spanish." : "Tap the mic to start a conversation."}
           </div>
         ) : (
-          messages.map((m, i) => <TranscriptBubble key={i} role={m.role} text={m.text} onWord={onWord} />)
+          messages.map((m, i) => (
+            <TranscriptBubble key={i} role={m.role} text={bubbleText(m)} onWord={onWord} />
+          ))
         )}
       </div>
 
@@ -315,12 +311,8 @@ export default function Talk({ nav }) {
             <span style={{ fontSize: 19, fontWeight: 600, color: "#1c1c1e", fontVariantNumeric: "tabular-nums", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", letterSpacing: "0.01em" }}>{timerText}</span>
           </div>
 
-          <button
-            onClick={(e) => { e.preventDefault(); /* Stage 4: load next scenario */ }}
-            style={{ flex: "none", width: 48, height: 48, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)", background: "#dcdce1", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
-          >
-            <SkipIcon size={21} />
-          </button>
+          {/* spacer keeps the mic centered now that the skip button is removed */}
+          <div style={{ flex: "none", width: 48, height: 48 }} aria-hidden="true" />
         </div>
       </div>
 
@@ -346,7 +338,18 @@ export default function Talk({ nav }) {
               ...(popup.placeAbove ? { transform: "translateY(-100%)" } : null),
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#000" }}>{popup.word}</div>
+            {/* header: word + close */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.01em", color: "#000" }}>{popup.word}</div>
+              <button
+                onClick={closePopup}
+                aria-label="Close"
+                style={{ flex: "none", width: 22, height: 22, borderRadius: "50%", border: "none", background: "#f0f0f2", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", padding: 0, marginTop: 1, WebkitTapHighlightColor: "transparent" }}
+              >
+                <CloseIcon size={12} stroke="#8e8e93" strokeWidth={2.6} />
+              </button>
+            </div>
+
             {entry.loading ? (
               <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 6 }}>Looking it up…</div>
             ) : entry.notFound || entry.error ? (
@@ -363,6 +366,17 @@ export default function Talk({ nav }) {
                   <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 6, lineHeight: 1.4 }}>{entry.definition}</div>
                 )}
               </>
+            )}
+
+            {/* add to dictionary */}
+            {!entry.loading && (
+              <button
+                onClick={() => addToDictionary(popup.word)}
+                disabled={added}
+                style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "none", padding: 0, cursor: added ? "default" : "pointer", fontSize: 13, fontWeight: 700, color: added ? "#34c759" : "#000", WebkitTapHighlightColor: "transparent" }}
+              >
+                {added ? "✓ Added to dictionary" : "+ Add to dictionary"}
+              </button>
             )}
           </div>
         </>
