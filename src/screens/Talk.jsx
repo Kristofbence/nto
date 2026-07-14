@@ -38,9 +38,39 @@ const cardSoft = {
   padding: "15px 16px 16px",
 };
 
-// Renders a string as individually tappable words (display-layer only — no
-// visible styling by default, so bubbles look identical). Whitespace/punctuation
-// is preserved; punctuation is stripped from the word passed to onWord.
+// Function/short words that should NOT get the "tap me" underline, so the bubble
+// isn't a sea of dots. v1 stop-word list (Spanish articles/preps/conjunctions/
+// pronouns/common verbs) plus a few English fillers.
+const STOP_WORDS = new Set([
+  // Spanish
+  "de", "la", "el", "y", "que", "un", "una", "unos", "unas", "en", "a", "se", "lo",
+  "los", "las", "del", "al", "o", "u", "e", "su", "sus", "mi", "mis", "tu", "tus",
+  "me", "te", "nos", "os", "le", "les", "por", "para", "con", "sin", "sobre",
+  "entre", "hasta", "desde", "si", "no", "ni", "como", "más", "muy", "ya", "es",
+  "son", "fue", "era", "ser", "está", "están", "he", "ha", "han", "yo", "él",
+  "ella", "ellos", "ellas", "esto", "eso", "esta", "este", "ese", "esa", "soy",
+  "eres", "somos", "hay", "the", "a", "an", "to", "of", "and", "is", "it", "you",
+  "i", "in", "on", "for",
+]);
+
+// A word worth hinting: 3+ letters and not a stop word.
+function isContentWord(clean) {
+  const w = clean.toLowerCase();
+  return w.length >= 3 && !STOP_WORDS.has(w);
+}
+
+// Subtle dotted "tap me" hint (matches the original chat-screen style).
+const DOTTED = {
+  textDecoration: "underline",
+  textDecorationStyle: "dotted",
+  textDecorationColor: "#c7c7cc",
+  textUnderlineOffset: "3px",
+};
+
+// Renders a string as individually tappable words (display-layer only).
+// Content words get a subtle dotted underline as a tap hint; every word stays
+// tappable. Whitespace/punctuation is preserved; punctuation is stripped from
+// the word passed to onWord.
 function TappableText({ text, onWord, style }) {
   return (text || "").split(/(\s+)/).map((tok, i) => {
     if (!tok || /^\s+$/.test(tok)) return tok;
@@ -50,7 +80,12 @@ function TappableText({ text, onWord, style }) {
       <span
         key={i}
         onClick={(e) => onWord(clean, e)}
-        style={{ cursor: "pointer", WebkitTapHighlightColor: "transparent", ...style }}
+        style={{
+          cursor: "pointer",
+          WebkitTapHighlightColor: "transparent",
+          ...(isContentWord(clean) ? DOTTED : null),
+          ...style,
+        }}
       >
         {tok}
       </span>
