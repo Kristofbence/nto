@@ -2,6 +2,7 @@
 // vocabulary ledger, trophy, punchline, report card, and a SHARE button.
 // Ported from Wrapped.dc.html.
 import TabBar from "../components/TabBar";
+import { useTutorView } from "../settings";
 import { FlameIcon, ShareIcon, ArrowUp, TrophyIcon } from "../components/icons";
 
 const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase" };
@@ -16,6 +17,7 @@ const REPORT = [
 ];
 
 export default function Wrapped({ nav }) {
+  const { tutor } = useTutorView();
   const share = (e) => {
     if (e) e.preventDefault();
     const data = { title: "Not The Owl", text: "My Spanish this week: THE CONFIDENTLY WRONG. +9% fluency." };
@@ -45,7 +47,7 @@ export default function Wrapped({ nav }) {
               <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your Spanish</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 4 }}>This week · Jul 7–13</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 3, whiteSpace: "nowrap" }}>
-                Roasted by El Patrón · <span style={{ fontWeight: 700, color: "#ff3b30" }}>Merciless</span>
+                Roasted by {tutor.name} · <span style={{ fontWeight: 700, color: tutor.heat }}>{tutor.tier}</span>
               </div>
             </div>
           </div>

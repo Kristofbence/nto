@@ -22,6 +22,7 @@ export default function TabBar({ active = "home", nav }) {
         left: 12,
         right: 12,
         bottom: 10,
+        zIndex: 50, // always above page content (e.g. the spin wheel's pointer)
         fontFamily: "Inter,-apple-system,system-ui,sans-serif",
         display: "flex",
         alignItems: "center",

@@ -3,6 +3,7 @@
 // live-data tiles. Ported pixel-for-pixel from Home.dc.html.
 import { useEffect, useState } from "react";
 import TabBar from "../components/TabBar";
+import { useTutorView } from "../settings";
 import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
   MicIcon,
@@ -46,6 +47,9 @@ export default function Home({ nav }) {
   };
   const g = GREETINGS[gi];
 
+  // Current tutor / level / language from the shared, persisted store.
+  const { tutor, levelName, lang } = useTutorView();
+
   const micStyle = {
     width: 88,
     height: 88,
@@ -85,7 +89,7 @@ export default function Home({ nav }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span onClick={go("language")} style={{ fontSize: 24, lineHeight: 1, cursor: "pointer" }}>
-            🇪🇸
+            {lang.flag}
           </span>
           <span onClick={go("settings")} style={{ cursor: "pointer", display: "flex" }}>
             <SettingsIcon />
@@ -118,9 +122,9 @@ export default function Home({ nav }) {
           }}
         >
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            <span style={{ color: "#000" }}>El Patrón</span>{" "}
+            <span style={{ color: "#000" }}>{tutor.name}</span>{" "}
             <span style={{ color: "#c7c7cc" }}>·</span>{" "}
-            <span style={{ color: "#ff3b30" }}>Merciless</span>
+            <span style={{ color: tutor.heat }}>{tutor.tier}</span>
           </div>
           <div key={g.es} style={{ animation: "ntoFade 0.4s ease both", marginTop: 6 }}>
             <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
@@ -171,9 +175,9 @@ export default function Home({ nav }) {
             START TALKING
           </div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 11, fontSize: 12, fontWeight: 500, color: "#6b6b70", whiteSpace: "nowrap" }}>
-            <span>🇪🇸 Spanish · Advanced</span>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#ff3b30", flex: "none" }} />
-            <span style={{ fontWeight: 700, color: "#000" }}>El Patrón</span>
+            <span>{lang.flag} {lang.name} · {levelName}</span>
+            <span style={{ width: 4, height: 4, borderRadius: "50%", background: tutor.heat, flex: "none" }} />
+            <span style={{ fontWeight: 700, color: "#000" }}>{tutor.name}</span>
           </div>
         </div>
 
@@ -192,13 +196,13 @@ export default function Home({ nav }) {
 
           <div style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff3b30" }} />
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: tutor.heat }} />
               <span style={eyebrow}>Your tutor</span>
             </div>
             <div style={{ marginTop: "auto", paddingTop: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: "#000", lineHeight: 1 }}>El Patrón</div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#ff3b30", marginTop: 5 }}>Merciless</div>
-              <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>Spanish · Advanced</div>
+              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: "#000", lineHeight: 1 }}>{tutor.name}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tutor.heat, marginTop: 5 }}>{tutor.tier}</div>
+              <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>{lang.name} · {levelName}</div>
             </div>
           </div>
         </div>

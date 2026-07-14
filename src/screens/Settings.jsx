@@ -3,8 +3,9 @@
 // Adds one on-brand "Replay intro" row to re-run onboarding.
 import { useRef, useState } from "react";
 import { CloseIcon, ChevronRight, LockIcon } from "../components/icons";
+import { useSettings, LANGS, LEVELS } from "../settings";
 
-const LEARN_LEVELS = ["Beginner", "Intermediate", "Advanced"];
+const LEARN_LEVELS = LEVELS;
 const ROAST_TIERS = [
   { label: "Nice", note: "Unlock to be treated with respect.", locked: true },
   { label: "Harsh", note: "It'll sigh a lot.", locked: false },
@@ -20,10 +21,15 @@ const groupCard = { background: "#fff", border: "1px solid rgba(0,0,0,0.05)", bo
 const rowLabel = { flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, color: "#000" };
 
 export default function Settings({ nav }) {
-  const [roast, setRoast] = useState(2);
+  // Roast level and learning level come from the shared, persisted store.
+  const { settings, update } = useSettings();
+  const roast = settings.roast;
+  const setRoast = (v) => update({ roast: v });
+  const learnIdx = settings.levelIdx;
+  const cycleLevel = () => update({ levelIdx: (settings.levelIdx + 1) % LEARN_LEVELS.length });
+
   const [translations, setTranslations] = useState(true);
   const [haptics, setHaptics] = useState(true);
-  const [learnIdx, setLearnIdx] = useState(2);
   const trackRef = useRef(null);
   const dragging = useRef(false);
 
@@ -84,11 +90,11 @@ export default function Settings({ nav }) {
             <Row onClick={(e) => { e.preventDefault(); nav && nav("language"); }}>
               <div style={rowLabel}>Learning</div>
               <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap" }}>🇪🇸 Spanish</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap" }}>{LANGS[settings.langId].flag} {LANGS[settings.langId].name}</span>
                 <ChevronRight />
               </div>
             </Row>
-            <Row last onClick={() => setLearnIdx((i) => (i + 1) % LEARN_LEVELS.length)}>
+            <Row last onClick={cycleLevel}>
               <div style={rowLabel}>Your level</div>
               <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#8e8e93" }}>{LEARN_LEVELS[learnIdx]}</span>

@@ -2,6 +2,7 @@
 // Finishing (or Skip) navigates to Home. Ported from Not The Owl Onboarding.dc.html.
 import { useRef, useState } from "react";
 import { ChevronLeft, LockIcon, CheckIcon } from "../components/icons";
+import { useSettings } from "../settings";
 
 const LANGS = [
   { id: "es", flag: "🇪🇸", name: "Spanish", note: "500M speakers. None impressed." },
@@ -34,6 +35,7 @@ export default function Onboarding({ nav }) {
   const [lang, setLang] = useState("es");
   const [level, setLevel] = useState(1);
   const [dial, setDial] = useState(2);
+  const { update } = useSettings();
   const trackRef = useRef(null);
   const dragging = useRef(false);
 
@@ -57,6 +59,8 @@ export default function Onboarding({ nav }) {
     e.preventDefault();
     if (step < 2) { setStep((s) => s + 1); return; }
     if (dial === 0) { alert("Paywall\n\nUnlock Nice — Pro"); return; }
+    // Persist the chosen tutor config to the shared store before entering the app.
+    update({ roast: dial, levelIdx: level, langId: lang });
     nav && nav("home");
   };
   const back = (e) => { e.preventDefault(); if (step > 0) setStep((s) => s - 1); };
