@@ -6,6 +6,7 @@ import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon } from "../components/icons";
 import { useTutorView } from "../settings";
 import { lookupWord } from "../lookup";
+import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
@@ -46,8 +47,28 @@ function TappableText({ text, onWord, style }) {
   });
 }
 
+// Small grey English translation line under a tutor bubble (settings-controlled).
+// Translated client-side (never via the assistant, so it's never spoken).
+function TranslationLine({ text, lang }) {
+  const [tr, setTr] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setTr(null);
+    if (!text) return undefined;
+    // Debounce so a bubble that grows across several finals doesn't spam the API.
+    const id = setTimeout(() => {
+      translate(text, lang, "en").then((t) => { if (alive) setTr(t); });
+    }, 300);
+    return () => { alive = false; clearTimeout(id); };
+  }, [text, lang]);
+  if (!tr) return null;
+  return (
+    <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8, lineHeight: 1.42 }}>{tr}</div>
+  );
+}
+
 // A live transcript bubble — tutor (assistant) white/left, user grey/right.
-function TranscriptBubble({ role, text, onWord }) {
+function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang }) {
   const isUser = role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
@@ -58,6 +79,7 @@ function TranscriptBubble({ role, text, onWord }) {
         <div style={{ fontSize: 16, fontWeight: isUser ? 600 : 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
           <TappableText text={text} onWord={onWord} />
         </div>
+        {!isUser && showTranslation && finalized ? <TranslationLine text={finalized} lang={lang} /> : null}
       </div>
     </div>
   );
@@ -76,7 +98,7 @@ export default function Talk({ nav }) {
   const [entry, setEntry] = useState({ loading: false });
   const [added, setAdded] = useState(false); // "+ Add to dictionary" feedback
   const dismissTimer = useRef(null);
-  const { langId } = useTutorView();
+  const { langId, showTranslations } = useTutorView();
 
   const closePopup = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
@@ -268,7 +290,15 @@ export default function Talk({ nav }) {
           </div>
         ) : (
           messages.map((m, i) => (
-            <TranscriptBubble key={i} role={m.role} text={bubbleText(m)} onWord={onWord} />
+            <TranscriptBubble
+              key={i}
+              role={m.role}
+              text={bubbleText(m)}
+              finalized={m.finalized}
+              onWord={onWord}
+              showTranslation={showTranslations}
+              lang={langId}
+            />
           ))
         )}
       </div>

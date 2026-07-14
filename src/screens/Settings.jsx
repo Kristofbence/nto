@@ -28,7 +28,9 @@ export default function Settings({ nav }) {
   const learnIdx = settings.levelIdx;
   const cycleLevel = () => update({ levelIdx: (settings.levelIdx + 1) % LEARN_LEVELS.length });
 
-  const [translations, setTranslations] = useState(true);
+  // "Show translations" is shared + persisted (read by the Talk screen).
+  const translations = settings.showTranslations;
+  const setTranslations = (v) => update({ showTranslations: v });
   const [haptics, setHaptics] = useState(true);
   const trackRef = useRef(null);
   const dragging = useRef(false);
@@ -147,7 +149,7 @@ export default function Settings({ nav }) {
                 <div style={{ fontSize: 15, fontWeight: 600, color: "#000" }}>Show translations</div>
                 <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 2 }}>Training wheels. Obviously.</div>
               </div>
-              <button onClick={() => setTranslations((v) => !v)} style={track(translations)}><span style={knob(translations)} /></button>
+              <button onClick={() => setTranslations(!translations)} style={track(translations)}><span style={knob(translations)} /></button>
             </Row>
             <Row cursor="default">
               <div style={{ flex: 1, minWidth: 0 }}>

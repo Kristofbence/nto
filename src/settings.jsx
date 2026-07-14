@@ -24,7 +24,7 @@ export const LANGS = {
   pt: { name: "Portuguese", flag: "🇵🇹" },
 };
 
-const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es" }; // Brutal · Advanced · Spanish
+const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es", showTranslations: true }; // Brutal · Advanced · Spanish
 
 function load() {
   try {
