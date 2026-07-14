@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import TabBar from "../components/TabBar";
 import { useTutorView, useSettings } from "../settings";
-import { session } from "../session";
 import { SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
@@ -52,12 +51,11 @@ export default function Home({ nav }) {
   // Current tutor / level / language from the shared, persisted store.
   const { tutor, levelName, lang } = useTutorView();
   const { update } = useSettings();
-  // Start a Talk session: set the scenario ("" = free conversation) and request
-  // the Talk screen to auto-start the voice call on arrival.
+  // Start a Talk session: set the scenario ("" = free conversation). Talk
+  // auto-starts the call on arrival regardless of route.
   const startTalk = (scenario) => (e) => {
     e.preventDefault();
     update({ scenario });
-    session.autostart = true;
     if (nav) nav("talk");
   };
 

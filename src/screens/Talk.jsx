@@ -10,7 +10,6 @@ import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
 import { cleanItalianTranscript } from "../transcriptCleanup";
-import { session } from "../session";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
 // import can arrive as the class itself or wrapped as { default: class }. Unwrap
@@ -104,6 +103,22 @@ function TranslationLine({ text, lang }) {
   return <div style={style}>{tr}</div>;
 }
 
+// Empty/idle/connecting hero: the stacked NOT/THE/OWL wordmark, replaced by real
+// bubbles once the conversation starts. Shows a small status line beneath.
+function BrandWaiting({ callActive, status }) {
+  const note = status || (callActive ? "Listening…" : null);
+  return (
+    <div style={{ margin: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+      <div style={{ textAlign: "center", fontWeight: 900, fontSize: 46, lineHeight: 0.9, letterSpacing: "-0.02em", color: "#000" }}>
+        <div>NOT</div>
+        <div>THE</div>
+        <div>OWL</div>
+      </div>
+      {note && <div style={{ fontSize: 12, fontWeight: 600, color: "#8e8e93" }}>{note}</div>}
+    </div>
+  );
+}
+
 // Subtle affordance / toggle for tap-to-reveal translation.
 const translateToggle = {
   display: "inline-flex", alignItems: "center", gap: 5, background: "transparent",
@@ -161,7 +176,7 @@ export default function Talk({ nav }) {
   const [entry, setEntry] = useState({ loading: false });
   const [added, setAdded] = useState(false); // "+ Add to vocabulary" feedback
   const dismissTimer = useRef(null);
-  const { langId, lang, showTranslations, roast, levelName, scenario } = useTutorView();
+  const { langId, lang, tutor, showTranslations, roast, levelName, scenario } = useTutorView();
 
   const closePopup = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
@@ -308,12 +323,11 @@ export default function Talk({ nav }) {
     }
   };
 
-  // Auto-start a call when arriving from a "start" control on Home.
+  // Auto-start the call on arrival — ANY route (Home mic, scenario START, or the
+  // Talk tab). The browser mic-permission prompt is expected on first use; a
+  // denial/failure surfaces via `status` under the brand card, not a crash.
   useEffect(() => {
-    if (session.autostart) {
-      session.autostart = false;
-      toggleCall();
-    }
+    toggleCall();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -365,18 +379,19 @@ export default function Talk({ nav }) {
           <CloseIcon size={20} />
           <span style={{ fontSize: 24, lineHeight: 1 }}>{lang.flag}</span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 1 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", color: "#a1a1a6", textTransform: "uppercase" }}>Survival</span>
-          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.01em", color: "#000" }}>DAY <span style={{ color: "#ff3b30" }}>4</span></span>
+        {/* Active tutor + roast level (from the shared language/tier setting). */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.01em", color: "#000", lineHeight: 1 }}>{tutor.name}</span>
+          {tutor.hasTier && (
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: tutor.heat }}>{tutor.tier}</span>
+          )}
         </div>
       </div>
 
       {/* CHAT FEED */}
       <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
         {messages.length === 0 ? (
-          <div style={{ margin: "auto", textAlign: "center", fontSize: 14, fontWeight: 500, color: "#8e8e93", padding: "0 24px", lineHeight: 1.4 }}>
-            {callActive ? `Listening… say something in ${lang.name}.` : "Tap the mic to start a conversation."}
-          </div>
+          <BrandWaiting callActive={callActive} status={status} />
         ) : (
           messages.map((m, i) => {
             // Italian-only, display-only homophone cleanup (e.g. "6" → "sei").
