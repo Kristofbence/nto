@@ -1,0 +1,131 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+}
+
+/* Phone-frame presentation: mockup on desktop, fullscreen on mobile */
+.nto-backdrop {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 0%, #ededf1 0%, #d5d5da 70%);
+  padding: 28px;
+  box-sizing: border-box;
+  font-family: Inter, -apple-system, system-ui, sans-serif;
+}
+.nto-frame {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  background: #f2f2f7;
+  border-radius: 44px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 40px 120px -30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+@media (max-width: 480px) {
+  .nto-backdrop {
+    padding: 0;
+    background: #f2f2f7;
+    align-items: stretch;
+  }
+  .nto-frame {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* Hide scrollbars inside the scrolling screen bodies */
+.nto-scroll::-webkit-scrollbar {
+  display: none;
+}
+.nto-scroll {
+  scrollbar-width: none;
+}
+
+/* Shared animations ported from the design prototypes */
+@keyframes ntoGlow {
+  0%,
+  100% {
+    box-shadow: 0 8px 20px -5px rgba(0, 0, 0, 0.22),
+      0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 0 rgba(57, 255, 20, 0.4);
+  }
+  50% {
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.26),
+      0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 14px rgba(57, 255, 20, 0);
+  }
+}
+@keyframes ntoFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ntoFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ntoPress {
+  0%,
+  100% {
+    box-shadow: 0 8px 22px -4px rgba(0, 0, 0, 0.28);
+  }
+  50% {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.34);
+  }
+}
+@keyframes ntoWave {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@keyframes ntoMsgIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ntoKnob {
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 0 rgba(0, 0, 0, 0.12);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 0 8px rgba(0, 0, 0, 0);
+  }
+}
