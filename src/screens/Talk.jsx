@@ -8,6 +8,7 @@ import { useTutorView } from "../settings";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
+import { session } from "../session";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
 // import can arrive as the class itself or wrapped as { default: class }. Unwrap
@@ -78,7 +79,10 @@ function TranslationLine({ text, lang }) {
 }
 
 // A live transcript bubble — tutor (assistant) white/left, user grey/right.
-function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang }) {
+// `ready` = this turn has ended (Spanish complete) → safe to show the English
+// translation. While a tutor turn is still streaming, `ready` is false so the
+// translation never appears/flickers mid-stream.
+function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang, ready }) {
   const isUser = role === "user";
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
@@ -89,7 +93,7 @@ function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang
         <div style={{ fontSize: 16, fontWeight: isUser ? 600 : 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
           <TappableText text={text} onWord={onWord} />
         </div>
-        {!isUser && showTranslation && finalized ? <TranslationLine text={finalized} lang={lang} /> : null}
+        {!isUser && showTranslation && ready && finalized ? <TranslationLine text={finalized} lang={lang} /> : null}
       </div>
     </div>
   );
@@ -106,7 +110,7 @@ export default function Talk({ nav }) {
   // Tap-to-define popup (display-layer only; independent of the voice pipeline).
   const [popup, setPopup] = useState(null); // { word, left, top, placeAbove, width }
   const [entry, setEntry] = useState({ loading: false });
-  const [added, setAdded] = useState(false); // "+ Add to dictionary" feedback
+  const [added, setAdded] = useState(false); // "+ Add to vocabulary" feedback
   const dismissTimer = useRef(null);
   const { langId, showTranslations, roast, levelName, scenario } = useTutorView();
 
@@ -140,15 +144,15 @@ export default function Talk({ nav }) {
       });
   };
 
-  const addToDictionary = (word) => {
+  const addToVocabulary = (word) => {
     try {
-      const key = "nto.dictionary";
+      const key = "nto.vocabulary";
       const list = JSON.parse(localStorage.getItem(key) || "[]");
       if (!list.includes(word)) list.push(word);
       localStorage.setItem(key, JSON.stringify(list));
-      console.log("[dictionary] added:", word, "→", list);
+      console.log("[vocabulary] added:", word, "→", list);
     } catch (err) {
-      console.warn("[dictionary] save failed:", err);
+      console.warn("[vocabulary] save failed:", err);
     }
     setAdded(true);
     if (dismissTimer.current) clearTimeout(dismissTimer.current); // let them see "Added"
@@ -247,6 +251,15 @@ export default function Talk({ nav }) {
     }
   };
 
+  // Auto-start a call when arriving from a "start" control on Home.
+  useEffect(() => {
+    if (session.autostart) {
+      session.autostart = false;
+      toggleCall();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const exit = (e) => {
     e.preventDefault();
     try { vapiRef.current.stop(); } catch { /* noop */ }
@@ -317,6 +330,8 @@ export default function Talk({ nav }) {
               onWord={onWord}
               showTranslation={showTranslations}
               lang={langId}
+              // A bubble's turn is over once a later bubble exists, or the call ended.
+              ready={i < messages.length - 1 || !callActive}
             />
           ))
         )}
@@ -347,7 +362,7 @@ export default function Talk({ nav }) {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32 }}>
           <button
-            onClick={(e) => { e.preventDefault(); nav && nav("dictionary"); }}
+            onClick={(e) => { e.preventDefault(); nav && nav("vocabulary"); }}
             style={{ flex: "none", width: 48, height: 48, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)", background: "#dcdce1", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
           >
             <BookIcon size={21} stroke="#000" strokeWidth={2} />
@@ -417,14 +432,14 @@ export default function Talk({ nav }) {
               </>
             )}
 
-            {/* add to dictionary */}
+            {/* add to vocabulary */}
             {!entry.loading && (
               <button
-                onClick={() => addToDictionary(popup.word)}
+                onClick={() => addToVocabulary(popup.word)}
                 disabled={added}
                 style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6, background: "transparent", border: "none", padding: 0, cursor: added ? "default" : "pointer", fontSize: 13, fontWeight: 700, color: added ? "#34c759" : "#000", WebkitTapHighlightColor: "transparent" }}
               >
-                {added ? "✓ Added to dictionary" : "+ Add to dictionary"}
+                {added ? "✓ Added to vocabulary" : "+ Add to vocabulary"}
               </button>
             )}
           </div>

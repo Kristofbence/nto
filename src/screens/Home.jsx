@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import TabBar from "../components/TabBar";
 import { useTutorView, useSettings } from "../settings";
+import { session } from "../session";
 import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
   MicIcon,
@@ -50,10 +51,12 @@ export default function Home({ nav }) {
   // Current tutor / level / language from the shared, persisted store.
   const { tutor, levelName, lang } = useTutorView();
   const { update } = useSettings();
-  // Start a Talk session, setting the scenario ("" = free conversation).
+  // Start a Talk session: set the scenario ("" = free conversation) and request
+  // the Talk screen to auto-start the voice call on arrival.
   const startTalk = (scenario) => (e) => {
     e.preventDefault();
     update({ scenario });
+    session.autostart = true;
     if (nav) nav("talk");
   };
 
@@ -155,7 +158,7 @@ export default function Home({ nav }) {
           }}
         >
           <div style={{ position: "relative", width: 118, height: 118, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="118" height="118" viewBox="0 0 118 118" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+            <svg width="118" height="118" viewBox="0 0 118 118" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)", pointerEvents: "none" }}>
               <circle cx="59" cy="59" r="53" fill="none" stroke="#e2e2e7" strokeWidth="7" />
               <circle cx="59" cy="59" r="53" fill="none" stroke="#3a3a3c" strokeWidth="7" strokeLinecap="round" strokeDasharray="176.5 333" />
             </svg>
@@ -190,7 +193,7 @@ export default function Home({ nav }) {
 
         {/* SURVIVAL + PERSONA ROW */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
-          <div style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column" }}>
+          <div onClick={go("stats")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
             <FlameIcon />
             <div style={{ marginTop: "auto", paddingTop: 16 }}>
               <div style={eyebrow}>Survival</div>
@@ -201,7 +204,7 @@ export default function Home({ nav }) {
             </div>
           </div>
 
-          <div style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column" }}>
+          <div onClick={go("settings")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: tutor.heat }} />
               <span style={eyebrow}>Your tutor</span>
@@ -266,14 +269,14 @@ export default function Home({ nav }) {
 
         {/* BENTO · TWO LIVE-DATA TILES */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
-          {/* DICTIONARY */}
+          {/* VOCABULARY */}
           <a
             href="#"
-            onClick={go("dictionary")}
+            onClick={go("vocabulary")}
             style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", minHeight: 132, cursor: "pointer", textDecoration: "none" }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={eyebrow}>Dictionary</div>
+              <div style={eyebrow}>Vocabulary</div>
               <BookIcon />
             </div>
             <div style={{ marginTop: "auto" }}>

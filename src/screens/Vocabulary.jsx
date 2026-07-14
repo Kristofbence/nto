@@ -1,5 +1,5 @@
-// DICTIONARY · "words you keep butchering" — false-friend fails with roast
-// notes and butcher counts. Ported from Not The Owl Dictionary.dc.html.
+// VOCABULARY · "words you keep butchering" — the user's saved words / false-friend
+// fails with roast notes and butcher counts. Ported from the Dictionary mockup.
 import { CloseIcon, ArrowRight } from "../components/icons";
 
 const WORDS = [
@@ -11,7 +11,7 @@ const WORDS = [
   { wrong: "sopa", right: "jabón", note: "You ordered soup. You meant soap. Somehow.", count: "×1" },
 ];
 
-export default function Dictionary({ nav }) {
+export default function Vocabulary({ nav }) {
   return (
     <>
       {/* APP BAR */}
@@ -19,7 +19,7 @@ export default function Dictionary({ nav }) {
         <div onClick={(e) => { e.preventDefault(); nav && nav("home"); }} style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
           <CloseIcon size={20} />
         </div>
-        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.02em", color: "#000" }}>DICTIONARY</div>
+        <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.02em", color: "#000" }}>VOCABULARY</div>
       </div>
 
       {/* SCROLL BODY */}

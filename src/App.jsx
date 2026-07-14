@@ -13,7 +13,7 @@ import Home from "./screens/Home";
 import Talk from "./screens/Talk";
 import Scenarios from "./screens/Scenarios";
 import Wrapped from "./screens/Wrapped";
-import Dictionary from "./screens/Dictionary";
+import Vocabulary from "./screens/Vocabulary";
 import Settings from "./screens/Settings";
 import Language from "./screens/Language";
 
@@ -23,7 +23,7 @@ const ALLOWED = [
   "talk",
   "scenarios",
   "stats",
-  "dictionary",
+  "vocabulary",
   "settings",
   "language",
 ];
@@ -51,7 +51,7 @@ export default function App() {
     talk: <Talk nav={navigate} />,
     scenarios: <Scenarios nav={navigate} />,
     stats: <Wrapped nav={navigate} />,
-    dictionary: <Dictionary nav={navigate} />,
+    vocabulary: <Vocabulary nav={navigate} />,
     settings: <Settings nav={navigate} />,
     language: <Language nav={navigate} />,
   };
