@@ -28,3 +28,15 @@ export function pickAssistant(langId, roast) {
   if (entry) return entry[roast] ?? entry[1]; // Spanish tier map (default Harsh)
   return ES_BY_ROAST[1]; // ultimate fallback: language not wired → Spanish Harsh
 }
+
+// Deepgram language code per app language. Our langIds are already valid
+// Deepgram codes; the map is explicit so the transcriber is pinned to the
+// target language and NEVER auto-detects (auto-detect is what returned "quién"
+// as the English word "King").
+const DEEPGRAM_LANG = { es: "es", fr: "fr", it: "it", de: "de", pt: "pt" };
+
+// Transcriber override for vapi.start — forces the STT language to the active
+// target language. Falls back to Spanish (never English/auto) if unmapped.
+export function transcriberFor(langId) {
+  return { provider: "deepgram", model: "nova-2", language: DEEPGRAM_LANG[langId] || "es" };
+}

@@ -5,12 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon, LanguagesIcon } from "../components/icons";
 import { useTutorView } from "../settings";
-import { pickAssistant } from "../assistants";
+import { pickAssistant, transcriberFor } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
-import { appendTranscript, bubbleText } from "../transcriptGroup";
-import { cleanItalianTranscript } from "../transcriptCleanup";
-import { extractInlineFixes, parseToolCallFixes, attachCorrections, wrongWordSet } from "../corrections";
+import { buildFeed } from "../conversationFeed";
+import { parseToolCallFixes, wrongWordSet } from "../corrections";
 import { tutorTypography, USER_TYPOGRAPHY } from "../tutorStyles";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
@@ -252,6 +251,14 @@ export default function Talk({ nav }) {
 
   const feedRef = useRef(null);
 
+  // Display state mirrored in refs so the (stable) Vapi handlers can read/rebuild
+  // without re-subscribing. messagesRef = last rendered feed; lastConvRef = last
+  // committed conversation history; toolFixesRef = accumulated tool-call fixes.
+  const messagesRef = useRef([]);
+  const lastConvRef = useRef([]);
+  const toolFixesRef = useRef([]);
+  const commit = (next) => { messagesRef.current = next; setMessages(next); };
+
   // One Vapi client for the life of this screen.
   const vapiRef = useRef(null);
   if (!vapiRef.current) vapiRef.current = new Vapi(VAPI_PUBLIC_KEY);
@@ -262,6 +269,9 @@ export default function Talk({ nav }) {
 
     const onCallStart = () => {
       setStatus(null);
+      messagesRef.current = [];
+      lastConvRef.current = [];
+      toolFixesRef.current = [];
       setMessages([]); // fresh conversation
       setSeconds(0);
       setCallActive(true);
@@ -269,33 +279,38 @@ export default function Talk({ nav }) {
     const onCallEnd = () => {
       setCallActive(false);
     };
-    // Group transcripts by speaker turn: same role → keep filling the same
-    // bubble (finals concatenate, partials grow it live); role change → new
-    // bubble. So one spoken turn renders as one growing bubble.
+    // Display comes from ONE source: the committed conversation history. The
+    // assistant's text is the model's own output (source text) — we never read
+    // transcript{role:"assistant"}, which is a re-transcription of our TTS.
     const onMessage = (m) => {
       if (!m) return;
 
-      // 1) Structured mistake flag via tool/function call (recommended path).
-      //    Attaches the wrong→right correction to the user's last bubble.
+      // Structured mistake flags (flagMistake tool/function call). Record against
+      // the current last user turn, then rebuild so it survives future updates.
       const toolFixes = parseToolCallFixes(m);
       if (toolFixes.length) {
-        setMessages((prev) => attachCorrections(prev, toolFixes));
+        const userIndex = messagesRef.current.filter((b) => b.role === "user").length - 1;
+        for (const f of toolFixes) toolFixesRef.current.push({ userIndex, ...f });
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current));
         return;
       }
 
-      // 2) Transcripts. Tutor text is scrubbed of any inline [[fix: …]] marker
-      //    (never displayed); on a final we also parse it as a correction.
-      if (m.type !== "transcript" || !m.transcript || !m.role) return;
-      const isFinal = m.transcriptType === "final";
-      setMessages((prev) => {
-        if (m.role === "assistant") {
-          const { clean, fixes } = extractInlineFixes(m.transcript, isFinal);
-          let arr = fixes.length ? attachCorrections(prev, fixes) : prev;
-          if (clean) arr = appendTranscript(arr, { role: "assistant", text: clean, isFinal });
-          return arr;
-        }
-        return appendTranscript(prev, { role: m.role, text: m.transcript, isFinal });
-      });
+      // The only display source. Requires modelOutputInMessagesEnabled (set in
+      // vapi.start) so assistant messages carry model output, not speech STT.
+      if (m.type === "conversation-update") {
+        lastConvRef.current = m.messagesOpenAIFormatted || [];
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current));
+        return;
+      }
+
+      // Barge-in: the SDK stops TTS playback. We explicitly do NOT touch the
+      // displayed text — it is sourced from the model output in conversation
+      // history, fully decoupled from the audio lifecycle, so the interrupted
+      // line stays complete. (The no-shrink guard in buildFeed is the net.)
+      if (m.type === "user-interrupted") return;
+
+      // transcript / speech-update / model-output are intentionally ignored:
+      // transcript{role:"assistant"} is the lossy re-transcription of our TTS.
     };
     const onError = (e) => {
       console.error("[Vapi] error:", e);
@@ -354,6 +369,12 @@ export default function Talk({ nav }) {
           level: (levelName || "").toLowerCase(),
           scenario: scenario || "",
         },
+        // Display the model's own words, not a transcription of the assistant's
+        // TTS: put model output into the conversation history we render.
+        modelOutputInMessagesEnabled: true,
+        // Pin the transcriber to the active target language — never auto-detect
+        // (auto-detect is why "quién" came back as the English word "King").
+        transcriber: transcriberFor(langId),
       };
       await vapi.start(assistantId, overrides);
     } catch (err) {
@@ -432,25 +453,21 @@ export default function Talk({ nav }) {
         {messages.length === 0 ? (
           <BrandWaiting callActive={callActive} status={status} />
         ) : (
-          messages.map((m, i) => {
-            // Italian-only, display-only homophone cleanup (e.g. "6" → "sei").
-            const clean = (t) => (langId === "it" ? cleanItalianTranscript(t) : t);
-            return (
-              <TranscriptBubble
-                key={i}
-                role={m.role}
-                text={clean(bubbleText(m))}
-                finalized={clean(m.finalized)}
-                onWord={onWord}
-                showTranslation={showTranslations}
-                lang={langId}
-                tutorType={tutorType}
-                corrections={m.corrections}
-                // A bubble's turn is over once a later bubble exists, or the call ended.
-                ready={i < messages.length - 1 || !callActive}
-              />
-            );
-          })
+          messages.map((m, i) => (
+            <TranscriptBubble
+              key={i}
+              role={m.role}
+              text={m.text}
+              finalized={m.text}
+              onWord={onWord}
+              showTranslation={showTranslations}
+              lang={langId}
+              tutorType={tutorType}
+              corrections={m.corrections}
+              // A bubble's turn is over once a later bubble exists, or the call ended.
+              ready={i < messages.length - 1 || !callActive}
+            />
+          ))
         )}
       </div>
 
