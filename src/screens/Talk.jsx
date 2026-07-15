@@ -10,6 +10,8 @@ import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { appendTranscript, bubbleText } from "../transcriptGroup";
 import { cleanItalianTranscript } from "../transcriptCleanup";
+import { extractInlineFixes, parseToolCallFixes, attachCorrections, wrongWordSet } from "../corrections";
+import { tutorTypography, USER_TYPOGRAPHY } from "../tutorStyles";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
 // import can arrive as the class itself or wrapped as { default: class }. Unwrap
@@ -61,11 +63,22 @@ const DOTTED = {
 // Content words get a subtle dotted underline as a tap hint; every word stays
 // tappable. Whitespace/punctuation is preserved; punctuation is stripped from
 // the word passed to onWord.
-function TappableText({ text, onWord, style }) {
+// Red-pen mark for a corrected (wrong) word on the user's line: crimson + a
+// solid crimson underline, offset 4px. No background, no animation, no badge.
+const CORRECTION = {
+  color: "#ff3b30",
+  textDecoration: "underline",
+  textDecorationColor: "#ff3b30",
+  textDecorationThickness: "1px",
+  textUnderlineOffset: "4px",
+};
+
+function TappableText({ text, onWord, style, wrongSet }) {
   return (text || "").split(/(\s+)/).map((tok, i) => {
     if (!tok || /^\s+$/.test(tok)) return tok;
     const clean = tok.replace(/[^\p{L}\p{M}''-]/gu, "");
     if (!clean) return tok;
+    const isWrong = wrongSet && wrongSet.has(clean.toLowerCase());
     return (
       <span
         key={i}
@@ -73,7 +86,8 @@ function TappableText({ text, onWord, style }) {
         style={{
           cursor: "pointer",
           WebkitTapHighlightColor: "transparent",
-          ...(isContentWord(clean) ? DOTTED : null),
+          // Correction mark wins over the dotted "tap me" hint.
+          ...(isWrong ? CORRECTION : isContentWord(clean) ? DOTTED : null),
           ...style,
         }}
       >
@@ -129,10 +143,14 @@ const translateToggle = {
 // A live transcript bubble — tutor (assistant) white/left, user grey/right.
 // Tutor bubbles offer TAP-TO-REVEAL English (per bubble) once the turn is
 // finalized (`ready`) and the "Show translations" setting is on.
-function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang, ready }) {
+function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang, ready, tutorType, corrections }) {
   const isUser = role === "user";
   const [revealed, setRevealed] = useState(false);
   const canTranslate = !isUser && showTranslation && ready && !!finalized;
+  // User line: fixed style + crimson correction marks. Tutor line: per-tutor
+  // typographic signature (size / line-height / weight / colour / tracking).
+  const textStyle = isUser ? USER_TYPOGRAPHY : tutorType;
+  const wrongSet = isUser && corrections ? wrongWordSet(corrections) : undefined;
 
   return (
     <div style={{ display: "flex", justifyContent: isUser ? "flex-end" : "flex-start", animation: "ntoMsgIn 0.3s ease both" }}>
@@ -140,8 +158,8 @@ function TranscriptBubble({ role, text, finalized, onWord, showTranslation, lang
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: isUser ? "#8e8e93" : "#a1a1a6", textTransform: "uppercase", marginBottom: 5, textAlign: isUser ? "right" : "left" }}>
           {isUser ? "You" : "Tutor"}
         </div>
-        <div style={{ fontSize: 16, fontWeight: isUser ? 600 : 700, lineHeight: 1.32, letterSpacing: "-0.02em", color: "#000" }}>
-          <TappableText text={text} onWord={onWord} />
+        <div style={textStyle}>
+          <TappableText text={text} onWord={onWord} wrongSet={wrongSet} />
         </div>
 
         {canTranslate && !revealed && (
@@ -177,6 +195,8 @@ export default function Talk({ nav }) {
   const [added, setAdded] = useState(false); // "+ Add to vocabulary" feedback
   const dismissTimer = useRef(null);
   const { langId, lang, tutor, showTranslations, roast, levelName, scenario } = useTutorView();
+  // Per-tutor typographic signature for reply bubbles (single-tutor langs → Brutal).
+  const tutorType = tutorTypography(tutor.tier, tutor.hasTier);
 
   const closePopup = () => {
     if (dismissTimer.current) clearTimeout(dismissTimer.current);
@@ -253,10 +273,29 @@ export default function Talk({ nav }) {
     // bubble (finals concatenate, partials grow it live); role change → new
     // bubble. So one spoken turn renders as one growing bubble.
     const onMessage = (m) => {
-      if (m?.type !== "transcript" || !m?.transcript || !m?.role) return;
-      setMessages((prev) =>
-        appendTranscript(prev, { role: m.role, text: m.transcript, isFinal: m.transcriptType === "final" })
-      );
+      if (!m) return;
+
+      // 1) Structured mistake flag via tool/function call (recommended path).
+      //    Attaches the wrong→right correction to the user's last bubble.
+      const toolFixes = parseToolCallFixes(m);
+      if (toolFixes.length) {
+        setMessages((prev) => attachCorrections(prev, toolFixes));
+        return;
+      }
+
+      // 2) Transcripts. Tutor text is scrubbed of any inline [[fix: …]] marker
+      //    (never displayed); on a final we also parse it as a correction.
+      if (m.type !== "transcript" || !m.transcript || !m.role) return;
+      const isFinal = m.transcriptType === "final";
+      setMessages((prev) => {
+        if (m.role === "assistant") {
+          const { clean, fixes } = extractInlineFixes(m.transcript, isFinal);
+          let arr = fixes.length ? attachCorrections(prev, fixes) : prev;
+          if (clean) arr = appendTranscript(arr, { role: "assistant", text: clean, isFinal });
+          return arr;
+        }
+        return appendTranscript(prev, { role: m.role, text: m.transcript, isFinal });
+      });
     };
     const onError = (e) => {
       console.error("[Vapi] error:", e);
@@ -405,6 +444,8 @@ export default function Talk({ nav }) {
                 onWord={onWord}
                 showTranslation={showTranslations}
                 lang={langId}
+                tutorType={tutorType}
+                corrections={m.corrections}
                 // A bubble's turn is over once a later bubble exists, or the call ended.
                 ready={i < messages.length - 1 || !callActive}
               />
