@@ -119,7 +119,7 @@ export default function Scenarios({ nav }) {
         </div>
 
         {/* LIST */}
-        <div style={{ background: "#ECECEF", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 20, overflow: "hidden" }}>
+        <div style={{ background: "#E5E5EA", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 20, overflow: "hidden" }}>
           {SCENARIOS.map((s, i) => {
             const Icon = s.Icon;
             return (

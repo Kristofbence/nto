@@ -201,7 +201,7 @@ export default function Home({ nav }) {
             <div style={{ marginTop: "auto", paddingTop: 16 }}>
               <div style={eyebrow}>Survival</div>
               <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", marginTop: 5 }}>
-                DAY <span style={{ color: "#ff3b30" }}>4</span>
+                DAY <span style={{ color: "#000" }}>4</span>
               </div>
               <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>Personal best: 12</div>
             </div>
@@ -278,7 +278,7 @@ export default function Home({ nav }) {
           <a
             href="#"
             onClick={go("vocabulary")}
-            style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", minHeight: 132, cursor: "pointer", textDecoration: "none" }}
+            style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", minHeight: 132, cursor: "pointer", textDecoration: "none" }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={eyebrow}>Vocabulary</div>
@@ -297,7 +297,7 @@ export default function Home({ nav }) {
           <a
             href="#"
             onClick={go("stats")}
-            style={{ ...cardStyle, padding: 16, display: "flex", flexDirection: "column", minHeight: 132, cursor: "pointer", textDecoration: "none" }}
+            style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", minHeight: 132, cursor: "pointer", textDecoration: "none" }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={eyebrow}>This week</div>
