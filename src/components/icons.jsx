@@ -144,6 +144,13 @@ export const LanguagesIcon = ({ size = 13, stroke = "#8e8e93", strokeWidth = 2, 
   </svg>
 );
 
+export const EyeIcon = ({ size = 14, stroke = "#a1a1a6", strokeWidth = 2, style }) => (
+  <svg {...base(size, stroke, strokeWidth, style)}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
 // Tab bar icons
 export const HomeIcon = ({ size = 24, stroke = "#8e8e93", strokeWidth = 1.8, style }) => (
   <svg {...base(size, stroke, strokeWidth, style)}>

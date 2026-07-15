@@ -14,6 +14,8 @@ import {
   ChartIcon,
   ArrowRight,
   SpinArrows,
+  ChevronRight,
+  EyeIcon,
 } from "../components/icons";
 
 // Rotating bilingual deadpan roasts (Spanish · English).
@@ -33,12 +35,24 @@ const eyebrow = {
   textTransform: "uppercase",
 };
 
+// Daily practice — single placeholder source, so the copy and the quota ring
+// can never contradict. (Stays a placeholder until real tracking exists.)
+const DAILY_DONE = 7;
+const DAILY_TOTAL = 15;
+const DAILY_LEFT = DAILY_TOTAL - DAILY_DONE;
+const RING_C = 2 * Math.PI * 53; // circumference of the r=53 quota ring
+const RING_ELAPSED = (DAILY_DONE / DAILY_TOTAL) * RING_C; // arc = quota elapsed
+
 export default function Home({ nav }) {
   const [gi, setGi] = useState(0);
   const [listening, setListening] = useState(false);
+  const [revealed, setRevealed] = useState(false); // tutor-quote translation
 
   useEffect(() => {
-    const t = setInterval(() => setGi((g) => (g + 1) % GREETINGS.length), 6000);
+    const t = setInterval(() => {
+      setGi((g) => (g + 1) % GREETINGS.length);
+      setRevealed(false); // each new line starts collapsed
+    }, 6000);
     return () => clearInterval(t);
   }, []);
 
@@ -96,11 +110,17 @@ export default function Home({ nav }) {
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.02em", color: "#000" }}>
           NOT THE OWL
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span onClick={go("language")} style={{ fontSize: 24, lineHeight: 1, cursor: "pointer" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, marginRight: -11 }}>
+          <span
+            onClick={go("language")}
+            style={{ width: 44, height: 44, margin: "-11px 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, lineHeight: 1, cursor: "pointer" }}
+          >
             {lang.flag}
           </span>
-          <span onClick={go("settings")} style={{ cursor: "pointer", display: "flex" }}>
+          <span
+            onClick={go("settings")}
+            style={{ width: 44, height: 44, margin: "-11px 0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+          >
             <SettingsIcon />
           </span>
         </div>
@@ -112,14 +132,15 @@ export default function Home({ nav }) {
         style={{
           flex: 1,
           overflowY: "auto",
-          padding: "22px 16px 124px",
+          padding: "22px 16px 104px", // clear the floating nav (~88px) + 16px
           display: "flex",
           flexDirection: "column",
           gap: 16,
         }}
       >
-        {/* HOSTILE GREETING */}
+        {/* TUTOR IDENTITY + SWITCHER · tap to change tutor / roast */}
         <div
+          onClick={go("settings")}
           style={{
             ...greyCardStyle,
             padding: "15px 16px 16px",
@@ -128,24 +149,38 @@ export default function Home({ nav }) {
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
+            cursor: "pointer",
           }}
         >
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            <span style={{ color: "#000" }}>{tutor.name}</span>
-            {tutor.hasTier && (
-              <>
-                {" "}<span style={{ color: "#c7c7cc" }}>·</span>{" "}
-                <span style={{ color: tutor.heat }}>{tutor.tier}</span>
-              </>
-            )}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+              <span style={{ color: "#000" }}>{tutor.name}</span>
+              {tutor.hasTier && (
+                <>
+                  {" "}<span style={{ color: "#c7c7cc" }}>·</span>{" "}
+                  <span style={{ color: tutor.heat }}>{tutor.tier}</span>
+                </>
+              )}
+            </div>
+            <ChevronRight style={{ flex: "none" }} />
           </div>
           <div key={g.es} style={{ animation: "ntoFade 0.4s ease both", marginTop: 6 }}>
             <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.24, letterSpacing: "-0.02em", color: "#000" }}>
               {g.es}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 7, lineHeight: 1.3 }}>
-              {g.en}
-            </div>
+            {revealed ? (
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8, lineHeight: 1.3 }}>
+                {g.en}
+              </div>
+            ) : (
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRevealed(true); }}
+                style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", WebkitTapHighlightColor: "transparent" }}
+              >
+                <EyeIcon />
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#a1a1a6" }}>Translate</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -162,8 +197,8 @@ export default function Home({ nav }) {
         >
           <div style={{ position: "relative", width: 118, height: 118, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="118" height="118" viewBox="0 0 118 118" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)", pointerEvents: "none" }}>
-              <circle cx="59" cy="59" r="53" fill="none" stroke="#e2e2e7" strokeWidth="7" />
-              <circle cx="59" cy="59" r="53" fill="none" stroke="#3a3a3c" strokeWidth="7" strokeLinecap="round" strokeDasharray="176.5 333" />
+              <circle cx="59" cy="59" r="53" fill="none" stroke="#e2e2e7" strokeWidth="4" />
+              <circle cx="59" cy="59" r="53" fill="none" stroke="#a1a1a6" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${RING_ELAPSED} ${RING_C}`} />
             </svg>
             <button
               onClick={startTalk("")}
@@ -179,46 +214,26 @@ export default function Home({ nav }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 15 }}>
             <span style={{ fontWeight: 700, letterSpacing: "0.06em", color: "#a1a1a6" }}>DAILY PRACTICE</span> ·{" "}
-            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>8</span>{" "}
-            of{" "}
-            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums" }}>15</span>{" "}
-            min left today
+            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_DONE}</span> done ·{" "}
+            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_LEFT}</span> left
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1, marginTop: 12, whiteSpace: "nowrap" }}>
             START TALKING
           </div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 11, fontSize: 12, fontWeight: 500, color: "#6b6b70", whiteSpace: "nowrap" }}>
-            <span>{lang.flag} {lang.name} · {levelName}</span>
-            <span style={{ width: 4, height: 4, borderRadius: "50%", background: tutor.heat, flex: "none" }} />
-            <span style={{ fontWeight: 700, color: "#000" }}>{tutor.name}</span>
+          <div style={{ marginTop: 11, fontSize: 12, fontWeight: 500, color: "#6b6b70", whiteSpace: "nowrap" }}>
+            {lang.name} · {levelName}
           </div>
         </div>
 
-        {/* SURVIVAL + PERSONA ROW */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
-          <div onClick={go("stats")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
-            <FlameIcon />
-            <div style={{ marginTop: "auto", paddingTop: 16 }}>
-              <div style={eyebrow}>Survival</div>
-              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", marginTop: 5 }}>
-                DAY <span style={{ color: "#000" }}>4</span>
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>Personal best: 12</div>
+        {/* SURVIVAL · full width */}
+        <div onClick={go("stats")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
+          <FlameIcon />
+          <div style={{ marginTop: 16 }}>
+            <div style={eyebrow}>Survival</div>
+            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", marginTop: 5 }}>
+              DAY <span style={{ color: "#000" }}>4</span>
             </div>
-          </div>
-
-          <div onClick={go("settings")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: tutor.heat }} />
-              <span style={eyebrow}>Your tutor</span>
-            </div>
-            <div style={{ marginTop: "auto", paddingTop: 16 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: "#000", lineHeight: 1 }}>{tutor.name}</div>
-              {tutor.hasTier && (
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: tutor.heat, marginTop: 5 }}>{tutor.tier}</div>
-              )}
-              <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>{lang.name} · {levelName}</div>
-            </div>
+            <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>Personal best: 12</div>
           </div>
         </div>
 
@@ -282,7 +297,10 @@ export default function Home({ nav }) {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={eyebrow}>Vocabulary</div>
-              <BookIcon />
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <BookIcon />
+                <ChevronRight />
+              </div>
             </div>
             <div style={{ marginTop: "auto" }}>
               <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em" }}>47</div>
@@ -301,7 +319,10 @@ export default function Home({ nav }) {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={eyebrow}>This week</div>
-              <ChartIcon />
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <ChartIcon />
+                <ChevronRight />
+              </div>
             </div>
             <div style={{ marginTop: 12 }}>
               <span style={{ display: "inline-block", position: "relative", fontSize: 11, fontWeight: 800, letterSpacing: "0.02em", color: "#000", padding: "1px 6px" }}>
@@ -317,6 +338,20 @@ export default function Home({ nav }) {
           </a>
         </div>
       </div>
+
+      {/* fade scrim · softens content into the bg just above the floating nav */}
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 88,
+          height: 28,
+          background: "linear-gradient(to bottom, rgba(242,242,247,0), #f2f2f7)",
+          pointerEvents: "none",
+          zIndex: 40,
+        }}
+      />
 
       <TabBar active="home" nav={nav} />
     </>
