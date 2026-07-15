@@ -5,7 +5,8 @@ import TabBar from "../components/TabBar";
 import { useSettings, LANGS } from "../settings";
 import { SCENARIOS as SCENARIO_DATA, SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import {
-  SpinArrows,
+  DiceIcon,
+  ChevronRight,
   WineIcon,
   PersonIcon,
   ChatBubblesIcon,
@@ -19,22 +20,12 @@ import {
   CompassIcon,
 } from "../components/icons";
 
-// difficulty: 1 easy(green) · 2 medium(amber) · 3 brutal(red)
-const HEAT = { 1: "#34c759", 2: "#f5a623", 3: "#ff3b30" };
+// difficulty tier word shown under each scenario title (1 easy · 2 medium · 3 brutal)
+const TIER_WORD = { 1: "Easy", 2: "Medium", 3: "Brutal" };
 
 // Icons align 1:1 (by order) with SCENARIO_DATA in ../scenarios.
 const ICONS = [PersonIcon, ChatBubblesIcon, ShieldIcon, DoorIcon, CarIcon, TagIcon, MugIcon, PlateIcon, FlameIcon, CompassIcon];
 const SCENARIOS = SCENARIO_DATA.map((s, i) => ({ ...s, Icon: ICONS[i] }));
-
-function Dots({ level }) {
-  return (
-    <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 4 }}>
-      {[1, 2, 3].map((i) => (
-        <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: i <= level ? HEAT[level] : "#d1d1d6" }} />
-      ))}
-    </div>
-  );
-}
 
 export default function Scenarios({ nav }) {
   const { settings, update } = useSettings();
@@ -64,29 +55,9 @@ export default function Scenarios({ nav }) {
               Pick your fight — or spin for a random real-life scenario to practice your {lang.name}.
             </div>
           </div>
-          <a href="#" onClick={goTalk} style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
-            <div style={{ position: "relative", width: 76, height: 76, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#fff", boxShadow: "0 3px 10px -2px rgba(0,0,0,0.16),0 1px 3px rgba(0,0,0,0.08)" }} />
-              <svg width="76" height="76" viewBox="0 0 76 76" style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-                <g stroke="#c7c7cc" strokeWidth="1.8" strokeLinecap="round">
-                  <line x1="38" y1="5" x2="38" y2="10" />
-                  <line x1="54.5" y1="9.4" x2="52" y2="13.7" />
-                  <line x1="66.6" y1="21.5" x2="62.3" y2="24" />
-                  <line x1="71" y1="38" x2="66" y2="38" />
-                  <line x1="66.6" y1="54.5" x2="62.3" y2="52" />
-                  <line x1="54.5" y1="66.6" x2="52" y2="62.3" />
-                  <line x1="38" y1="71" x2="38" y2="66" />
-                  <line x1="21.5" y1="66.6" x2="24" y2="62.3" />
-                  <line x1="9.4" y1="54.5" x2="13.7" y2="52" />
-                  <line x1="5" y1="38" x2="10" y2="38" />
-                  <line x1="9.4" y1="21.5" x2="13.7" y2="24" />
-                  <line x1="21.5" y1="9.4" x2="24" y2="13.7" />
-                </g>
-              </svg>
-              <div style={{ position: "absolute", top: 1, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: "10px solid #ff3b30", zIndex: 2, pointerEvents: "none" }} />
-              <div style={{ position: "relative", width: 52, height: 52, borderRadius: "50%", background: "#39FF14", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px -3px rgba(0,0,0,0.25)" }}>
-                <SpinArrows size={24} />
-              </div>
+          <a href="#" onClick={goTalk} style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: "#E5E5EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <DiceIcon size={26} stroke="#000" />
             </div>
             <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase" }}>Spin</span>
           </a>
@@ -119,7 +90,7 @@ export default function Scenarios({ nav }) {
         </div>
 
         {/* LIST */}
-        <div style={{ background: "#E5E5EA", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 20, overflow: "hidden" }}>
+        <div style={{ background: "#E5E5EA", border: "1px solid rgba(0,0,0,0.04)", borderRadius: 20, overflow: "hidden", flexShrink: 0 }}>
           {SCENARIOS.map((s, i) => {
             const Icon = s.Icon;
             return (
@@ -129,10 +100,15 @@ export default function Scenarios({ nav }) {
                 style={{ display: "flex", alignItems: "center", gap: 14, padding: "15px 16px", borderBottom: i < SCENARIOS.length - 1 ? "1px solid #d1d1d6" : "none", cursor: "pointer" }}
               >
                 <Icon style={{ flex: "none" }} />
-                <div style={{ flex: 1, minWidth: 0, fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em", color: "#000", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {s.title}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em", color: "#000", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {s.title}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#ff3b30", marginTop: 4 }}>
+                    {TIER_WORD[s.level]}
+                  </div>
                 </div>
-                <Dots level={s.level} />
+                <ChevronRight stroke="#a1a1a6" style={{ flex: "none" }} />
               </div>
             );
           })}

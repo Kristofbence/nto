@@ -70,6 +70,17 @@ export const SpinArrows = ({ size = 24, stroke = "#000", strokeWidth = 2.2, styl
   </svg>
 );
 
+export const DiceIcon = ({ size = 24, stroke = "#000", strokeWidth = 1.9, style }) => (
+  <svg {...base(size, stroke, strokeWidth, style)}>
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="8.5" cy="8.5" r="1.15" fill={stroke} stroke="none" />
+    <circle cx="15.5" cy="8.5" r="1.15" fill={stroke} stroke="none" />
+    <circle cx="12" cy="12" r="1.15" fill={stroke} stroke="none" />
+    <circle cx="8.5" cy="15.5" r="1.15" fill={stroke} stroke="none" />
+    <circle cx="15.5" cy="15.5" r="1.15" fill={stroke} stroke="none" />
+  </svg>
+);
+
 export const CloseIcon = ({ size = 20, stroke = "#8e8e93", strokeWidth = 2.4, style }) => (
   <svg {...base(size, stroke, strokeWidth, style)}>
     <path d="M18 6 6 18" />
