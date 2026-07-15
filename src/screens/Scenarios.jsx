@@ -1,6 +1,7 @@
 // SCENARIOS · header with spin wheel, Scenario of the Day hero, and a grouped
 // list of nationality-tagged scenarios. Every row / the START / the wheel lead
 // into a Talk session. Ported from Scenarios.dc.html.
+import { useState } from "react";
 import TabBar from "../components/TabBar";
 import { useSettings, LANGS } from "../settings";
 import { SCENARIOS as SCENARIO_DATA, SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
@@ -22,6 +23,8 @@ import {
 
 // difficulty tier word shown under each scenario title (1 easy · 2 medium · 3 brutal)
 const TIER_WORD = { 1: "Easy", 2: "Medium", 3: "Brutal" };
+// difficulty dot colour on the hero card: 1 easy(green) · 2 medium(amber) · 3 brutal(red)
+const HEAT = { 1: "#34c759", 2: "#f5a623", 3: "#ff3b30" };
 
 // Icons align 1:1 (by order) with SCENARIO_DATA in ../scenarios.
 const ICONS = [PersonIcon, ChatBubblesIcon, ShieldIcon, DoorIcon, CarIcon, TagIcon, MugIcon, PlateIcon, FlameIcon, CompassIcon];
@@ -30,13 +33,22 @@ const SCENARIOS = SCENARIO_DATA.map((s, i) => ({ ...s, Icon: ICONS[i] }));
 export default function Scenarios({ nav }) {
   const { settings, update } = useSettings();
   const lang = LANGS[settings.langId] || LANGS.es;
-  // Start a session, passing the full scenario text ("" = random/free for Spin).
+  // The hero card's scenario is stateful — Spin swaps in a random one IN PLACE
+  // (no navigation). Seeded with the Scenario of the Day (Brutal, level 3).
+  const [hero, setHero] = useState({ ...SCENARIO_OF_THE_DAY, level: 3 });
+  // Start a session with the given scenario text.
   const start = (text) => (e) => {
     e.preventDefault();
     update({ scenario: text });
     if (nav) nav("talk");
   };
-  const goTalk = start(""); // the Spin wheel → random scenario
+  // Replace the hero scenario with a different random one (in place).
+  const spin = (e) => {
+    e.preventDefault();
+    const pool = SCENARIOS.filter((s) => s.title !== hero.title);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setHero({ title: pick.title, desc: pick.desc, level: pick.level });
+  };
 
   return (
     <>
@@ -47,20 +59,12 @@ export default function Scenarios({ nav }) {
 
       {/* SCROLL BODY */}
       <div className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "18px 14px 150px", display: "flex", flexDirection: "column", gap: 14 }}>
-        {/* HEADER ROW · title + spin wheel */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "6px 4px 0" }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>{lang.flag} Scenarios</div>
-            <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4, color: "#6b6b70", marginTop: 6 }}>
-              Pick your fight — or spin for a random real-life scenario to practice your {lang.name}.
-            </div>
+        {/* HEADER ROW · title */}
+        <div style={{ padding: "6px 4px 0" }}>
+          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>{lang.flag} Scenarios</div>
+          <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4, color: "#6b6b70", marginTop: 6 }}>
+            Pick your fight — or spin for a random real-life scenario to practice your {lang.name}.
           </div>
-          <a href="#" onClick={goTalk} style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", WebkitTapHighlightColor: "transparent" }}>
-            <div style={{ width: 48, height: 48, borderRadius: 16, background: "#E5E5EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DiceIcon size={26} stroke="#000" />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#6b6b70", textTransform: "uppercase" }}>Spin</span>
-          </a>
         </div>
 
         {/* HERO · SCENARIO OF THE DAY */}
@@ -69,19 +73,26 @@ export default function Scenarios({ nav }) {
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase" }}>Scenario of the day</div>
             <WineIcon />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", marginTop: 12, lineHeight: 1.02 }}>The Barcelona Bar</div>
+          <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", marginTop: 12, lineHeight: 1.02 }}>{hero.title}</div>
           <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.42, color: "#6b6b70", marginTop: 9 }}>
-            She's the most beautiful person in the room. You have one shot, one language, and a rapidly closing window. Go.
+            {hero.desc}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
-            {[0, 1, 2].map((i) => (
-              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: "#ff3b30" }} />
+            {[1, 2, 3].map((i) => (
+              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: i <= hero.level ? HEAT[hero.level] : "#d1d1d6" }} />
             ))}
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase", marginLeft: 4 }}>Brutal</span>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase", marginLeft: 4 }}>{TIER_WORD[hero.level]}</span>
           </div>
-          <button onClick={start(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))} style={{ width: "100%", marginTop: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, padding: "15px 0", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
-            <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.06em", color: "#fff", textTransform: "uppercase" }}>Start →</span>
-          </button>
+          {/* START (primary) + Spin (swap scenario in place), same row / height */}
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button onClick={start(scenarioText(hero.title, hero.desc))} style={{ flex: 3, height: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.06em", color: "#fff", textTransform: "uppercase" }}>Start →</span>
+            </button>
+            <button onClick={spin} aria-label="Spin for a random scenario" style={{ flex: 2, height: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#E5E5EA", border: "none", borderRadius: 999, cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
+              <DiceIcon size={22} stroke="#000" />
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em", color: "#000", textTransform: "uppercase" }}>Spin</span>
+            </button>
+          </div>
         </div>
 
         {/* LIST HEADER */}

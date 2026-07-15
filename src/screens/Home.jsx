@@ -214,7 +214,7 @@ export default function Home({ nav }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 15 }}>
             <span style={{ fontWeight: 700, letterSpacing: "0.06em", color: "#a1a1a6" }}>DAILY PRACTICE</span> ·{" "}
-            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_DONE}</span> done ·{" "}
+            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_DONE}</span> min done ·{" "}
             <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_LEFT}</span> left
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1, marginTop: 12, whiteSpace: "nowrap" }}>
