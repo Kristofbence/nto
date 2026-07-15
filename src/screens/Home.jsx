@@ -31,7 +31,7 @@ const eyebrow = {
   fontSize: 10,
   fontWeight: 700,
   letterSpacing: "0.14em",
-  color: "#a1a1a6",
+  color: "#8e8e93", // a11y: was #a1a1a6; darkened for contrast on grey cards
   textTransform: "uppercase",
 };
 
@@ -169,7 +169,7 @@ export default function Home({ nav }) {
               {g.es}
             </div>
             {revealed ? (
-              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 8, lineHeight: 1.3 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#6b6b70", marginTop: 8, lineHeight: 1.3 }}>
                 {g.en}
               </div>
             ) : (
@@ -178,7 +178,7 @@ export default function Home({ nav }) {
                 style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", WebkitTapHighlightColor: "transparent" }}
               >
                 <EyeIcon />
-                <span style={{ fontSize: 13, fontWeight: 500, color: "#a1a1a6" }}>Translate</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93" }}>Translate</span>
               </button>
             )}
           </div>
@@ -233,7 +233,7 @@ export default function Home({ nav }) {
             <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", marginTop: 5 }}>
               DAY <span style={{ color: "#000" }}>4</span>
             </div>
-            <div style={{ fontSize: 10, fontWeight: 500, color: "#8e8e93", marginTop: 7 }}>Personal best: 12</div>
+            <div style={{ fontSize: 10, fontWeight: 500, color: "#6b6b70", marginTop: 7 }}>Personal best: 12</div>
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export default function Home({ nav }) {
                   <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ff3b30" }} />
                 ))}
               </span>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>Brutal</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#6b6b70", textTransform: "uppercase" }}>Brutal</span>
             </div>
             <button
               onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
@@ -283,7 +283,7 @@ export default function Home({ nav }) {
               <div style={{ position: "absolute", top: -3, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "8px solid #ff3b30", zIndex: 2 }} />
               <SpinArrows size={24} style={{ position: "relative", zIndex: 1 }} />
             </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase" }}>Spin</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#6b6b70", textTransform: "uppercase" }}>Spin</span>
           </a>
         </div>
 
@@ -304,7 +304,7 @@ export default function Home({ nav }) {
             </div>
             <div style={{ marginTop: "auto" }}>
               <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em" }}>47</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 7 }}>Words butchered</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8e8e93", textTransform: "uppercase", marginTop: 7 }}>Words butchered</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 9 }}>
                 Last: <span style={{ fontStyle: "italic", color: "#000" }}>embarazada</span>
               </div>
@@ -332,7 +332,7 @@ export default function Home({ nav }) {
             </div>
             <div style={{ marginTop: "auto", display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#34c759", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", letterSpacing: "-0.03em" }}>+9%</span>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase" }}>Fluency</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8e8e93", textTransform: "uppercase" }}>Fluency</span>
             </div>
             <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 9 }}>See the damage →</div>
           </a>

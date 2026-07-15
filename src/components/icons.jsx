@@ -70,6 +70,13 @@ export const SpinArrows = ({ size = 24, stroke = "#000", strokeWidth = 2.2, styl
   </svg>
 );
 
+export const GaugeIcon = ({ size = 16, stroke = "#8e8e93", strokeWidth = 1.9, style }) => (
+  <svg {...base(size, stroke, strokeWidth, style)}>
+    <path d="m12 14 4-4" />
+    <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+  </svg>
+);
+
 export const DiceIcon = ({ size = 24, stroke = "#000", strokeWidth = 1.9, style }) => (
   <svg {...base(size, stroke, strokeWidth, style)}>
     <rect x="3" y="3" width="18" height="18" rx="5" />

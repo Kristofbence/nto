@@ -59,7 +59,7 @@ export default function Scenarios({ nav }) {
             <div style={{ width: 48, height: 48, borderRadius: 16, background: "#E5E5EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <DiceIcon size={26} stroke="#000" />
             </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#8e8e93", textTransform: "uppercase" }}>Spin</span>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#6b6b70", textTransform: "uppercase" }}>Spin</span>
           </a>
         </div>
 
@@ -86,7 +86,7 @@ export default function Scenarios({ nav }) {
 
         {/* LIST HEADER */}
         <div style={{ padding: "6px 4px 0" }}>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.1em", color: "#a1a1a6", textTransform: "uppercase" }}>Your scenarios</div>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>Your scenarios</div>
         </div>
 
         {/* LIST */}

@@ -3,10 +3,17 @@
 // Ported from Wrapped.dc.html.
 import TabBar from "../components/TabBar";
 import { useTutorView } from "../settings";
-import { FlameIcon, ShareIcon, ArrowUp, TrophyIcon } from "../components/icons";
+import { FlameIcon, ShareIcon, ArrowUp, TrophyIcon, GaugeIcon } from "../components/icons";
 
 const eyebrow = { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase" };
 const monoNum = { fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums" };
+
+// Vocabulary ledger — single placeholder source so the numbers, the net, and
+// the bar widths can never disagree. (Bar is bound to these, verified below.)
+const LEARNED = 82;
+const FORGOTTEN = 50;
+const NET = LEARNED - FORGOTTEN;
+const NET_STR = (NET >= 0 ? "+" : "") + NET;
 const cardSoft = { background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" };
 
 const REPORT = [
@@ -40,8 +47,8 @@ export default function Wrapped({ nav }) {
         {/* TITLE BLOCK */}
         <div style={{ ...cardSoft, padding: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-            <div style={{ flex: "none", width: 40, height: 40, borderRadius: 12, background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FlameIcon size={21} stroke="#fff" strokeWidth={2} />
+            <div style={{ flex: "none", width: 40, height: 40, borderRadius: 12, background: "#E5E5EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <FlameIcon size={21} stroke="#000" strokeWidth={2} />
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your {lang.name}</div>
@@ -100,26 +107,25 @@ export default function Wrapped({ nav }) {
           <div style={eyebrow}>The Vocabulary Ledger</div>
           <div style={{ display: "flex", alignItems: "center", marginTop: 12 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#000", ...monoNum, letterSpacing: "-0.03em" }}>82</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 7 }}>Words Learned</div>
+              <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#000", ...monoNum, letterSpacing: "-0.03em" }}>{LEARNED}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 7 }}>Learned</div>
             </div>
             <div style={{ width: 1, alignSelf: "stretch", background: "#e2e2e7", margin: "0 16px" }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#ff3b30", ...monoNum, letterSpacing: "-0.03em" }}>50</div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 7 }}>Words Forgotten</div>
-            </div>
-            <div style={{ flex: "none", textAlign: "right", paddingLeft: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#a1a1a6", textTransform: "uppercase" }}>Net</div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 3, marginTop: 5 }}>
-                <span style={{ fontSize: 19, fontWeight: 800, color: "#000", ...monoNum, letterSpacing: "-0.02em" }}>+32</span>
-                <ArrowUp size={12} stroke="#000" strokeWidth={3.2} />
-              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#ff3b30", ...monoNum, letterSpacing: "-0.03em" }}>{FORGOTTEN}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 7 }}>Forgotten</div>
             </div>
           </div>
-          <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", marginTop: 14 }}>
-            <div style={{ width: "62%", background: "#1c1c1e" }} />
-            <div style={{ width: "1.5%" }} />
-            <div style={{ flex: 1, background: "#ff3b30" }} />
+          {/* bar · segment widths bound to the learned / forgotten counts */}
+          <div style={{ display: "flex", height: 6, marginTop: 14, gap: 3 }}>
+            <div style={{ flexGrow: LEARNED, background: "#1c1c1e", borderRadius: 3 }} />
+            <div style={{ flexGrow: FORGOTTEN, background: "#ff3b30", borderRadius: 3 }} />
+          </div>
+          {/* net · own line below the bar, left-aligned */}
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", color: "#a1a1a6", textTransform: "uppercase" }}>Net</span>
+            <span style={{ fontSize: 19, fontWeight: 800, color: "#000", ...monoNum, letterSpacing: "-0.02em" }}>{NET_STR}</span>
+            <ArrowUp size={12} stroke="#34c759" strokeWidth={3.2} />
           </div>
         </div>
 
@@ -138,7 +144,7 @@ export default function Wrapped({ nav }) {
           <div style={{ ...cardSoft, flex: 1, padding: 15, display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={eyebrow}>Avg Pace</div>
-              <span style={{ fontSize: 15, lineHeight: 1 }}>🚀</span>
+              <GaugeIcon />
             </div>
             <div style={{ fontSize: 30, fontWeight: 800, lineHeight: 1, color: "#000", ...monoNum, letterSpacing: "-0.03em", marginTop: 14 }}>47</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#a1a1a6", textTransform: "uppercase", marginTop: 8, lineHeight: 1.3 }}>Average<br />Words / Min</div>
