@@ -21,6 +21,12 @@ const Vapi = typeof VapiPkg === "function" ? VapiPkg : VapiPkg.default;
 // Public key — safe to ship in front-end code. NEVER put a private key here.
 const VAPI_PUBLIC_KEY = "fb6a87e8-4feb-4cbd-ade2-4ba12f74ade9";
 
+// Debug logger — gated behind ?debug=1 so it ships to prod but stays silent
+// unless explicitly enabled. Prints every raw Vapi message and each buildFeed
+// result verbatim (expandable objects) so a real call can be inspected.
+const DEBUG = typeof window !== "undefined" && /[?&]debug=1(?:&|$)/.test(window.location.search);
+const dbg = (...a) => { if (DEBUG) console.log("[nto]", ...a); };
+
 const cardSoft = {
   maxWidth: "85%",
   background: "#fff",
@@ -290,6 +296,7 @@ export default function Talk({ nav }) {
     // assistant's text is the model's own output (source text) — we never read
     // transcript{role:"assistant"}, which is a re-transcription of our TTS.
     const onMessage = (m) => {
+      dbg("msg", m && m.type, m); // every raw Vapi message, verbatim
       if (!m) return;
 
       // Structured mistake flags (flagMistake tool/function call). Record against
@@ -298,7 +305,9 @@ export default function Talk({ nav }) {
       if (toolFixes.length) {
         const userIndex = messagesRef.current.filter((b) => b.role === "user").length - 1;
         for (const f of toolFixes) toolFixesRef.current.push({ userIndex, ...f });
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
+        const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
+        dbg("buildFeed(toolfix) ->", next);
+        commit(next);
         return;
       }
 
@@ -308,7 +317,10 @@ export default function Talk({ nav }) {
       // output — it's a static config line we own.
       if (m.type === "conversation-update") {
         lastConvRef.current = m.messagesOpenAIFormatted || [];
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
+        dbg("conversation-update messagesOpenAIFormatted", m.messagesOpenAIFormatted);
+        const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
+        dbg("buildFeed ->", next);
+        commit(next);
         return;
       }
 
