@@ -21,7 +21,7 @@ import { extractInlineFixes } from "./corrections";
 
 const DISPLAY_ROLES = new Set(["user", "assistant"]);
 
-export function buildFeed(openAIMessages, prev = [], toolFixes = []) {
+export function buildFeed(openAIMessages, prev = [], toolFixes = [], firstAssistantPin = null) {
   const out = [];
   for (const x of openAIMessages || []) {
     if (!x || !DISPLAY_ROLES.has(x.role)) continue;
@@ -35,6 +35,17 @@ export function buildFeed(openAIMessages, prev = [], toolFixes = []) {
       const text = content.trim();
       if (text) out.push({ role: "user", text, corrections: [] });
     }
+  }
+
+  // Client-owned opener wins. The assistant's first line (the one it speaks
+  // before any user turn) is a static config string we hold verbatim — the
+  // history version is a transcription of its own TTS ("quién" -> "King"), so we
+  // overwrite it with our string and never let any message "correct" it.
+  if (firstAssistantPin) {
+    const idx = out.findIndex((m) => m.role === "assistant");
+    const userBefore = idx > 0 && out.slice(0, idx).some((m) => m.role === "user");
+    if (idx >= 0 && !userBefore) out[idx].text = firstAssistantPin;
+    else out.unshift({ role: "assistant", text: firstAssistantPin, corrections: [] });
   }
 
   // Structured (tool-call) corrections → the user bubble they were flagged on.

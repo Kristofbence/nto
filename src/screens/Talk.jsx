@@ -5,10 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon, LanguagesIcon } from "../components/icons";
 import { useTutorView } from "../settings";
-import { pickAssistant, transcriberFor } from "../assistants";
+import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { buildFeed } from "../conversationFeed";
+import { firstMessageFor } from "../firstMessages";
 import { parseToolCallFixes, wrongWordSet } from "../corrections";
 import { tutorTypography, USER_TYPOGRAPHY } from "../tutorStyles";
 
@@ -257,6 +258,7 @@ export default function Talk({ nav }) {
   const messagesRef = useRef([]);
   const lastConvRef = useRef([]);
   const toolFixesRef = useRef([]);
+  const firstMsgRef = useRef(null); // client-owned opener (pins the first bubble)
   const commit = (next) => { messagesRef.current = next; setMessages(next); };
 
   // One Vapi client for the life of this screen.
@@ -269,10 +271,15 @@ export default function Talk({ nav }) {
 
     const onCallStart = () => {
       setStatus(null);
-      messagesRef.current = [];
       lastConvRef.current = [];
       toolFixesRef.current = [];
-      setMessages([]); // fresh conversation
+      // Seed the client-owned opener as the first bubble so the displayed line
+      // comes from our string, not a transcription of the assistant's TTS.
+      const seed = firstMsgRef.current
+        ? [{ role: "assistant", text: firstMsgRef.current, corrections: [] }]
+        : [];
+      messagesRef.current = seed;
+      setMessages(seed);
       setSeconds(0);
       setCallActive(true);
     };
@@ -291,15 +298,17 @@ export default function Talk({ nav }) {
       if (toolFixes.length) {
         const userIndex = messagesRef.current.filter((b) => b.role === "user").length - 1;
         for (const f of toolFixes) toolFixesRef.current.push({ userIndex, ...f });
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current));
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
         return;
       }
 
       // The only display source. Requires modelOutputInMessagesEnabled (set in
       // vapi.start) so assistant messages carry model output, not speech STT.
+      // The opener is pinned separately (firstMsgRef) since it has no model
+      // output — it's a static config line we own.
       if (m.type === "conversation-update") {
         lastConvRef.current = m.messagesOpenAIFormatted || [];
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current));
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
         return;
       }
 
@@ -364,17 +373,23 @@ export default function Talk({ nav }) {
       // Pick the tutor by (language, tier); pass the student's level (and any
       // chosen scenario) so the assistant's {{level}} / {{scenario}} fill in.
       const assistantId = pickAssistant(langId, roast);
+      // Client-owned opener: the SAME string is spoken (firstMessage override)
+      // and displayed (seeded/pinned bubble), so the opener can't be a
+      // transcription of its own TTS. null → leave the server's firstMessage.
+      const firstMessage = firstMessageFor(langId, roast);
+      firstMsgRef.current = firstMessage;
       const overrides = {
         variableValues: {
           level: (levelName || "").toLowerCase(),
           scenario: scenario || "",
         },
-        // Display the model's own words, not a transcription of the assistant's
-        // TTS: put model output into the conversation history we render.
+        // For GENERATED turns: put the model's own words into the conversation
+        // history we render, not a transcription of the assistant's TTS.
         modelOutputInMessagesEnabled: true,
-        // Pin the transcriber to the active target language — never auto-detect
-        // (auto-detect is why "quién" came back as the English word "King").
-        transcriber: transcriberFor(langId),
+        ...(firstMessage ? { firstMessage } : null),
+        // NOTE: no transcriber override — the server assistant is already
+        // Deepgram Nova-2 / es-419 (Latin-American Spanish). Sending "es" here
+        // would DOWNGRADE that to generic Spanish, so we trust the server.
       };
       await vapi.start(assistantId, overrides);
     } catch (err) {
