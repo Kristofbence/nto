@@ -21,12 +21,6 @@ const Vapi = typeof VapiPkg === "function" ? VapiPkg : VapiPkg.default;
 // Public key — safe to ship in front-end code. NEVER put a private key here.
 const VAPI_PUBLIC_KEY = "fb6a87e8-4feb-4cbd-ade2-4ba12f74ade9";
 
-// Debug logger — gated behind ?debug=1 so it ships to prod but stays silent
-// unless explicitly enabled. Prints every raw Vapi message and each buildFeed
-// result verbatim (expandable objects) so a real call can be inspected.
-const DEBUG = typeof window !== "undefined" && /[?&]debug=1(?:&|$)/.test(window.location.search);
-const dbg = (...a) => { if (DEBUG) console.log("[nto]", ...a); };
-
 const cardSoft = {
   maxWidth: "85%",
   background: "#fff",
@@ -296,12 +290,7 @@ export default function Talk({ nav }) {
     // assistant's text is the model's own output (source text) — we never read
     // transcript{role:"assistant"}, which is a re-transcription of our TTS.
     const onMessage = (m) => {
-      dbg("msg", m && m.type, m); // every raw Vapi message, verbatim
       if (!m) return;
-      // Shape probes for the rebind (33/35): the channels the turns arrive on.
-      if (m.type === "model-output") dbg("model-output .output", m.output);
-      if (m.type === "voice-input") dbg("voice-input FULL", m);
-      if (m.type === "speech-update") dbg("speech-update", m.status, m.role, m);
 
       // Structured mistake flags (flagMistake tool/function call). Record against
       // the current last user turn, then rebuild so it survives future updates.
@@ -309,25 +298,17 @@ export default function Talk({ nav }) {
       if (toolFixes.length) {
         const userIndex = messagesRef.current.filter((b) => b.role === "user").length - 1;
         for (const f of toolFixes) toolFixesRef.current.push({ userIndex, ...f });
-        const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
-        dbg("buildFeed(toolfix) ->", next);
-        commit(next);
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
         return;
       }
 
-      // The only display source. Requires modelOutputInMessagesEnabled (set in
-      // vapi.start) so assistant messages carry model output, not speech STT.
-      // The opener is pinned separately (firstMsgRef) since it has no model
-      // output — it's a static config line we own.
+      // The only display source. Bind to `messages` (native shape) — the OpenAI-
+      // formatted array is empty for this assistant; the turns live here.
+      // buildFeed filters to user/bot. The opener is pinned separately
+      // (firstMsgRef) since it's a static config line with no model output.
       if (m.type === "conversation-update") {
-        // Bind to `messages` (native shape). messagesOpenAIFormatted is empty for
-        // this assistant; the turns live here. buildFeed filters to user/bot.
         lastConvRef.current = m.messages || [];
-        dbg("conversation-update .messages roles", (m.messages || []).map((x) => x.role));
-        dbg("conversation-update .messages", m.messages);
-        const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
-        dbg("buildFeed ->", next);
-        commit(next);
+        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
         return;
       }
 
