@@ -40,6 +40,10 @@ export function extractInlineFixes(text, isFinal) {
 export function parseToolCallFixes(m) {
   if (!m || typeof m !== "object") return [];
   const calls = [];
+  // Vapi's "tool-calls" client message carries the calls in `toolCallList`
+  // (each { id, type, function: { name, arguments } }). The other shapes are
+  // kept for other SDK/providers. Without toolCallList we'd never see the call.
+  if (Array.isArray(m.toolCallList)) calls.push(...m.toolCallList);
   if (Array.isArray(m.toolCalls)) calls.push(...m.toolCalls);
   if (Array.isArray(m.tool_calls)) calls.push(...m.tool_calls);
   if (m.functionCall) calls.push({ function: m.functionCall });
