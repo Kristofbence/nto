@@ -1,6 +1,6 @@
-// SCENARIOS · header with spin wheel, Scenario of the Day hero, and a grouped
-// list of nationality-tagged scenarios. Every row / the START / the wheel lead
-// into a Talk session. Ported from Scenarios.dc.html.
+// SCENARIOS · title, Scenario of the Day hero (START + Roll), and a grouped
+// list of nationality-tagged scenarios. Every row / the START leads into a Talk
+// session; Roll swaps the hero scenario in place. Ported from Scenarios.dc.html.
 import { useState } from "react";
 import TabBar from "../components/TabBar";
 import { useSettings, LANGS } from "../settings";
@@ -21,10 +21,8 @@ import {
   CompassIcon,
 } from "../components/icons";
 
-// difficulty tier word shown under each scenario title (1 easy · 2 medium · 3 brutal)
+// difficulty tier word (shown in crimson everywhere; never dots)
 const TIER_WORD = { 1: "Easy", 2: "Medium", 3: "Brutal" };
-// difficulty dot colour on the hero card: 1 easy(green) · 2 medium(amber) · 3 brutal(red)
-const HEAT = { 1: "#34c759", 2: "#f5a623", 3: "#ff3b30" };
 
 // Icons align 1:1 (by order) with SCENARIO_DATA in ../scenarios.
 const ICONS = [PersonIcon, ChatBubblesIcon, ShieldIcon, DoorIcon, CarIcon, TagIcon, MugIcon, PlateIcon, FlameIcon, CompassIcon];
@@ -33,7 +31,7 @@ const SCENARIOS = SCENARIO_DATA.map((s, i) => ({ ...s, Icon: ICONS[i] }));
 export default function Scenarios({ nav }) {
   const { settings, update } = useSettings();
   const lang = LANGS[settings.langId] || LANGS.es;
-  // The hero card's scenario is stateful — Spin swaps in a random one IN PLACE
+  // The hero card's scenario is stateful — Roll swaps in a random one IN PLACE
   // (no navigation). Seeded with the Scenario of the Day (Brutal, level 3).
   const [hero, setHero] = useState({ ...SCENARIO_OF_THE_DAY, level: 3 });
   // Start a session with the given scenario text.
@@ -43,7 +41,7 @@ export default function Scenarios({ nav }) {
     if (nav) nav("talk");
   };
   // Replace the hero scenario with a different random one (in place).
-  const spin = (e) => {
+  const roll = (e) => {
     e.preventDefault();
     const pool = SCENARIOS.filter((s) => s.title !== hero.title);
     const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -63,7 +61,7 @@ export default function Scenarios({ nav }) {
         <div style={{ padding: "6px 4px 0" }}>
           <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>{lang.flag} Scenarios</div>
           <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4, color: "#6b6b70", marginTop: 6 }}>
-            Pick your fight — or spin for a random real-life scenario to practice your {lang.name}.
+            Pick your fight — or roll for a random one.
           </div>
         </div>
 
@@ -77,20 +75,18 @@ export default function Scenarios({ nav }) {
           <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.42, color: "#6b6b70", marginTop: 9 }}>
             {hero.desc}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 16 }}>
-            {[1, 2, 3].map((i) => (
-              <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: i <= hero.level ? HEAT[hero.level] : "#d1d1d6" }} />
-            ))}
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase", marginLeft: 4 }}>{TIER_WORD[hero.level]}</span>
+          {/* difficulty = tier word only, crimson (no dots — dots live nowhere) */}
+          <div style={{ marginTop: 16 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#ff3b30", textTransform: "uppercase" }}>{TIER_WORD[hero.level]}</span>
           </div>
-          {/* START (primary) + Spin (swap scenario in place), same row / height */}
+          {/* START (primary) + Roll (swap scenario in place), same row / height */}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={start(scenarioText(hero.title, hero.desc))} style={{ flex: 3, height: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#000", border: "none", borderRadius: 999, cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
               <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.06em", color: "#fff", textTransform: "uppercase" }}>Start →</span>
             </button>
-            <button onClick={spin} aria-label="Spin for a random scenario" style={{ flex: 2, height: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#E5E5EA", border: "none", borderRadius: 999, cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
+            <button onClick={roll} aria-label="Roll for a random scenario" style={{ flex: 2, height: 52, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#E5E5EA", border: "none", borderRadius: 999, cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}>
               <DiceIcon size={22} stroke="#000" />
-              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em", color: "#000", textTransform: "uppercase" }}>Spin</span>
+              <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.04em", color: "#000", textTransform: "uppercase" }}>Roll</span>
             </button>
           </div>
         </div>

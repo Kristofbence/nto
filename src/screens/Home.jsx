@@ -9,11 +9,9 @@ import { cardStyle, greyCardStyle, primaryShadow } from "../tokens";
 import {
   MicIcon,
   SettingsIcon,
-  FlameIcon,
   BookIcon,
   ChartIcon,
   ArrowRight,
-  SpinArrows,
   ChevronRight,
   EyeIcon,
 } from "../components/icons";
@@ -35,13 +33,8 @@ const eyebrow = {
   textTransform: "uppercase",
 };
 
-// Daily practice — single placeholder source, so the copy and the quota ring
-// can never contradict. (Stays a placeholder until real tracking exists.)
-const DAILY_DONE = 7;
-const DAILY_TOTAL = 15;
-const DAILY_LEFT = DAILY_TOTAL - DAILY_DONE;
-const RING_C = 2 * Math.PI * 53; // circumference of the r=53 quota ring
-const RING_ELAPSED = (DAILY_DONE / DAILY_TOTAL) * RING_C; // arc = quota elapsed
+// Minutes of daily practice left today (placeholder until real tracking exists).
+const DAILY_LEFT = 8;
 
 export default function Home({ nav }) {
   const [gi, setGi] = useState(0);
@@ -195,96 +188,50 @@ export default function Home({ nav }) {
             textAlign: "center",
           }}
         >
-          <div style={{ position: "relative", width: 118, height: 118, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="118" height="118" viewBox="0 0 118 118" style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)", pointerEvents: "none" }}>
-              <circle cx="59" cy="59" r="53" fill="none" stroke="#e2e2e7" strokeWidth="4" />
-              <circle cx="59" cy="59" r="53" fill="none" stroke="#a1a1a6" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${RING_ELAPSED} ${RING_C}`} />
-            </svg>
-            <button
-              onClick={startTalk("")}
-              onMouseDown={() => setListening(true)}
-              onMouseUp={() => setListening(false)}
-              onMouseLeave={() => setListening(false)}
-              onTouchStart={() => setListening(true)}
-              onTouchEnd={() => setListening(false)}
-              style={micStyle}
-            >
-              <MicIcon size={34} />
-            </button>
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 15 }}>
-            <span style={{ fontWeight: 700, letterSpacing: "0.06em", color: "#a1a1a6" }}>DAILY PRACTICE</span> ·{" "}
-            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_DONE}</span> min done ·{" "}
-            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", color: "#000", fontWeight: 700 }}>{DAILY_LEFT}</span> left
+          <button
+            onClick={startTalk("")}
+            onMouseDown={() => setListening(true)}
+            onMouseUp={() => setListening(false)}
+            onMouseLeave={() => setListening(false)}
+            onTouchStart={() => setListening(true)}
+            onTouchEnd={() => setListening(false)}
+            style={micStyle}
+          >
+            <MicIcon size={34} />
+          </button>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "#8e8e93", marginTop: 15 }}>
+            DAILY PRACTICE ·{" "}
+            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums" }}>{DAILY_LEFT}</span> min left today
           </div>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1, marginTop: 12, whiteSpace: "nowrap" }}>
             START TALKING
           </div>
-          <div style={{ marginTop: 11, fontSize: 12, fontWeight: 500, color: "#6b6b70", whiteSpace: "nowrap" }}>
+          <div style={{ marginTop: 11, fontSize: 12, fontWeight: 400, color: "#8e8e93", whiteSpace: "nowrap" }}>
             {lang.name} · {levelName}
           </div>
         </div>
 
-        {/* SURVIVAL · full width */}
-        <div onClick={go("stats")} style={{ ...greyCardStyle, padding: 16, display: "flex", flexDirection: "column", cursor: "pointer" }}>
-          <FlameIcon />
-          <div style={{ marginTop: 16 }}>
-            <div style={eyebrow}>Survival</div>
-            <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.02em", marginTop: 5 }}>
-              DAY <span style={{ color: "#000" }}>4</span>
-            </div>
-            <div style={{ fontSize: 10, fontWeight: 500, color: "#6b6b70", marginTop: 7 }}>Personal best: 12</div>
-          </div>
+        {/* SURVIVAL · ambient line on the bg (not a card, not a widget) */}
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>
+          Survival Day 4 · Best 12
         </div>
 
         {/* SCENARIO OF THE DAY */}
-        <div style={{ ...greyCardStyle, padding: 16, display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={eyebrow}>Scenario of the day</div>
-            <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1.1, marginTop: 7 }}>
-              The Barcelona Bar
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 9 }}>
-              <span style={{ display: "flex", gap: 4 }}>
-                {[0, 1, 2].map((i) => (
-                  <span key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#ff3b30" }} />
-                ))}
-              </span>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#6b6b70", textTransform: "uppercase" }}>Brutal</span>
-            </div>
-            <button
-              onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
-              style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
-            >
-              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>
-              <ArrowRight />
-            </button>
+        <div style={{ ...greyCardStyle, padding: 16 }}>
+          <div style={eyebrow}>Scenario of the day</div>
+          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1.1, marginTop: 7 }}>
+            The Barcelona Bar
           </div>
-
-          {/* roulette wheel · green FRAME, hollow center · doorway to Scenarios */}
-          <a
-            href="#"
-            onClick={go("scenarios")}
-            style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, textDecoration: "none", WebkitTapHighlightColor: "transparent" }}
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#ff3b30", textTransform: "uppercase", marginTop: 9 }}>
+            Brutal
+          </div>
+          <button
+            onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
+            style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
           >
-            <div style={{ position: "relative", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ position: "absolute", inset: 0, borderRadius: "50%", background: "#fff", border: "4px solid #39FF14", boxShadow: "0 2px 6px rgba(0,0,0,0.14)" }} />
-              <svg width="64" height="64" viewBox="0 0 64 64" style={{ position: "absolute", inset: 0 }}>
-                <g stroke="#c7c7cc" strokeWidth="1.5" strokeLinecap="round">
-                  <line x1="48.3" y1="15.7" x2="51.1" y2="12.9" />
-                  <line x1="55" y1="32" x2="59" y2="32" />
-                  <line x1="48.3" y1="48.3" x2="51.1" y2="51.1" />
-                  <line x1="32" y1="55" x2="32" y2="59" />
-                  <line x1="15.7" y1="48.3" x2="12.9" y2="51.1" />
-                  <line x1="9" y1="32" x2="5" y2="32" />
-                  <line x1="15.7" y1="15.7" x2="12.9" y2="12.9" />
-                </g>
-              </svg>
-              <div style={{ position: "absolute", top: -3, left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "8px solid #ff3b30", zIndex: 2 }} />
-              <SpinArrows size={24} style={{ position: "relative", zIndex: 1 }} />
-            </div>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: "#6b6b70", textTransform: "uppercase" }}>Spin</span>
-          </a>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>
+            <ArrowRight />
+          </button>
         </div>
 
         {/* BENTO · TWO LIVE-DATA TILES */}

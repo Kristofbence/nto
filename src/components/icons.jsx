@@ -61,15 +61,6 @@ export const ArrowUp = ({ size = 12, stroke = "#000", strokeWidth = 3.2, style }
   </svg>
 );
 
-export const SpinArrows = ({ size = 24, stroke = "#000", strokeWidth = 2.2, style }) => (
-  <svg {...base(size, stroke, strokeWidth, style)}>
-    <path d="M21 2v6h-6" />
-    <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
-    <path d="M3 22v-6h6" />
-    <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
-  </svg>
-);
-
 export const GaugeIcon = ({ size = 16, stroke = "#8e8e93", strokeWidth = 1.9, style }) => (
   <svg {...base(size, stroke, strokeWidth, style)}>
     <path d="m12 14 4-4" />
