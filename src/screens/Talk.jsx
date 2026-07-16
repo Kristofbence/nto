@@ -298,6 +298,10 @@ export default function Talk({ nav }) {
     const onMessage = (m) => {
       dbg("msg", m && m.type, m); // every raw Vapi message, verbatim
       if (!m) return;
+      // Shape probes for the rebind (33/35): the channels the turns arrive on.
+      if (m.type === "model-output") dbg("model-output .output", m.output);
+      if (m.type === "voice-input") dbg("voice-input FULL", m);
+      if (m.type === "speech-update") dbg("speech-update", m.status, m.role, m);
 
       // Structured mistake flags (flagMistake tool/function call). Record against
       // the current last user turn, then rebuild so it survives future updates.
@@ -317,6 +321,7 @@ export default function Talk({ nav }) {
       // output — it's a static config line we own.
       if (m.type === "conversation-update") {
         lastConvRef.current = m.messagesOpenAIFormatted || [];
+        dbg("conversation-update .messages", m.messages); // cheap-fix decider (Step 1)
         dbg("conversation-update messagesOpenAIFormatted", m.messagesOpenAIFormatted);
         const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
         dbg("buildFeed ->", next);
