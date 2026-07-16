@@ -3,14 +3,14 @@
 // Design/layout is unchanged from the prototype — only behavior is wired up.
 import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
-import { CloseIcon, BookIcon, MicIcon, LanguagesIcon } from "../components/icons";
+import { CloseIcon, BookIcon, MicIcon, LanguagesIcon, PhoneDownIcon } from "../components/icons";
 import { useTutorView } from "../settings";
 import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
 import { buildFeed } from "../conversationFeed";
 import { firstMessageFor } from "../firstMessages";
-import { parseToolCallFixes, wrongWordSet } from "../corrections";
+import { wrongWordSet } from "../corrections";
 import { tutorTypography, USER_TYPOGRAPHY } from "../tutorStyles";
 
 // @vapi-ai/web ships as CommonJS; depending on the bundler's interop the default
@@ -117,22 +117,6 @@ function TranslationLine({ text, lang }) {
   return <div style={style}>{tr}</div>;
 }
 
-// Empty/idle/connecting hero: the stacked NOT/THE/OWL wordmark, replaced by real
-// bubbles once the conversation starts. Shows a small status line beneath.
-function BrandWaiting({ callActive, status }) {
-  const note = status || (callActive ? "Listening…" : null);
-  return (
-    <div style={{ margin: "auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-      <div style={{ textAlign: "center", fontWeight: 900, fontSize: 46, lineHeight: 0.9, letterSpacing: "-0.02em", color: "#000" }}>
-        <div>NOT</div>
-        <div>THE</div>
-        <div>OWL</div>
-      </div>
-      {note && <div style={{ fontSize: 12, fontWeight: 600, color: "#8e8e93" }}>{note}</div>}
-    </div>
-  );
-}
-
 // Subtle affordance / toggle for tap-to-reveal translation.
 const translateToggle = {
   display: "inline-flex", alignItems: "center", gap: 5, background: "transparent",
@@ -194,7 +178,7 @@ export default function Talk({ nav }) {
   const [entry, setEntry] = useState({ loading: false });
   const [added, setAdded] = useState(false); // "+ Add to vocabulary" feedback
   const dismissTimer = useRef(null);
-  const { langId, lang, tutor, showTranslations, roast, levelName, scenario } = useTutorView();
+  const { langId, tutor, showTranslations, roast, levelName, scenario } = useTutorView();
   // Per-tutor typographic signature for reply bubbles (single-tutor langs → Brutal).
   const tutorType = tutorTypography(tutor.tier, tutor.hasTier);
 
@@ -254,10 +238,9 @@ export default function Talk({ nav }) {
 
   // Display state mirrored in refs so the (stable) Vapi handlers can read/rebuild
   // without re-subscribing. messagesRef = last rendered feed; lastConvRef = last
-  // committed conversation history; toolFixesRef = accumulated tool-call fixes.
+  // committed conversation history.
   const messagesRef = useRef([]);
   const lastConvRef = useRef([]);
-  const toolFixesRef = useRef([]);
   const firstMsgRef = useRef(null); // client-owned opener (pins the first bubble)
   const commit = (next) => { messagesRef.current = next; setMessages(next); };
 
@@ -272,7 +255,6 @@ export default function Talk({ nav }) {
     const onCallStart = () => {
       setStatus(null);
       lastConvRef.current = [];
-      toolFixesRef.current = [];
       // Seed the client-owned opener as the first bubble so the displayed line
       // comes from our string, not a transcription of the assistant's TTS.
       const seed = firstMsgRef.current
@@ -292,23 +274,13 @@ export default function Talk({ nav }) {
     const onMessage = (m) => {
       if (!m) return;
 
-      // Structured mistake flags (flagMistake tool/function call). Record against
-      // the current last user turn, then rebuild so it survives future updates.
-      const toolFixes = parseToolCallFixes(m);
-      if (toolFixes.length) {
-        const userIndex = messagesRef.current.filter((b) => b.role === "user").length - 1;
-        for (const f of toolFixes) toolFixesRef.current.push({ userIndex, ...f });
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
-        return;
-      }
-
       // The only display source. Bind to `messages` (native shape) — the OpenAI-
       // formatted array is empty for this assistant; the turns live here.
       // buildFeed filters to user/bot. The opener is pinned separately
       // (firstMsgRef) since it's a static config line with no model output.
       if (m.type === "conversation-update") {
         lastConvRef.current = m.messages || [];
-        commit(buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current));
+        commit(buildFeed(lastConvRef.current, messagesRef.current, [], firstMsgRef.current));
         return;
       }
 
@@ -369,7 +341,8 @@ export default function Talk({ nav }) {
       return;
     }
     try {
-      setStatus("Connecting…");
+      // No "Connecting…" status — the call screen shows "Calling…" until the
+      // call goes active (then a timer). Only real errors set `status`.
       // Pick the tutor by (language, tier); pass the student's level (and any
       // chosen scenario) so the assistant's {{level}} / {{scenario}} fill in.
       const assistantId = pickAssistant(langId, roast);
@@ -437,56 +410,45 @@ export default function Talk({ nav }) {
 
   return (
     <>
-      {/* HEADER */}
-      <div
-        style={{
-          flex: "none",
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid #e2e2e7",
-          padding: "56px 20px 14px",
-          background: "#fff",
-        }}
-      >
-        <div onClick={exit} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-          <CloseIcon size={20} />
-          <span style={{ fontSize: 24, lineHeight: 1 }}>{lang.flag}</span>
+      {/* CALL HEADER · centered identity (iOS outgoing-call style) */}
+      <div style={{ flex: "none", paddingTop: 72, paddingBottom: 24, textAlign: "center", background: "#F2F2F7" }}>
+        <div style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.01em", color: "#000", lineHeight: 1, textTransform: "uppercase" }}>
+          {tutor.name}
         </div>
-        {/* Active tutor + roast level (from the shared language/tier setting). */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
-          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "0.01em", color: "#000", lineHeight: 1 }}>{tutor.name}</span>
-          {tutor.hasTier && (
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: tutor.heat }}>{tutor.tier}</span>
+        {tutor.hasTier && (
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#ff3b30", marginTop: 8 }}>
+            {tutor.tier}
+          </div>
+        )}
+        <div style={{ fontSize: 15, fontWeight: 500, color: "#8e8e93", marginTop: 10, minHeight: 20 }}>
+          {callActive ? (
+            <span style={{ fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums" }}>{timerText}</span>
+          ) : (
+            status || "Calling…"
           )}
         </div>
       </div>
 
       {/* CHAT FEED */}
-      <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
-        {messages.length === 0 ? (
-          <BrandWaiting callActive={callActive} status={status} />
-        ) : (
-          messages.map((m, i) => (
-            <TranscriptBubble
-              key={i}
-              role={m.role}
-              text={m.text}
-              finalized={m.text}
-              onWord={onWord}
-              showTranslation={showTranslations}
-              lang={langId}
-              tutorType={tutorType}
-              corrections={m.corrections}
-              // A bubble's turn is over once a later bubble exists, or the call ended.
-              ready={i < messages.length - 1 || !callActive}
-            />
-          ))
-        )}
+      <div ref={feedRef} className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "8px 16px 12px", display: "flex", flexDirection: "column", gap: 16, background: "#F2F2F7" }}>
+        {messages.map((m, i) => (
+          <TranscriptBubble
+            key={i}
+            role={m.role}
+            text={m.text}
+            finalized={m.text}
+            onWord={onWord}
+            showTranslation={showTranslations}
+            lang={langId}
+            tutorType={tutorType}
+            corrections={m.corrections}
+            // A bubble's turn is over once a later bubble exists, or the call ended.
+            ready={i < messages.length - 1 || !callActive}
+          />
+        ))}
       </div>
 
-      {/* ACTION ZONE */}
+      {/* ACTION ZONE · dictionary · mic (hero) · hang up */}
       <div
         style={{
           flex: "none",
@@ -496,36 +458,29 @@ export default function Talk({ nav }) {
           WebkitBackdropFilter: "blur(8px)",
         }}
       >
-        {/* status / waveform strip (fixed height — no layout shift) */}
-        <div style={{ height: 16, display: "flex", justifyContent: "center", alignItems: "flex-end", marginBottom: 10 }}>
-          {callActive ? (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 16 }}>
-              {[0, 0.12, 0.24, 0.36, 0.48].map((d, i) => (
-                <span key={i} style={{ width: 4, height: 16, borderRadius: 2, background: "#34c759", transformOrigin: "bottom", animation: `ntoWave 0.7s ease-in-out ${d}s infinite` }} />
-              ))}
-            </div>
-          ) : status ? (
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "90%" }}>{status}</span>
-          ) : null}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* dictionary */}
           <button
             onClick={(e) => { e.preventDefault(); nav && nav("vocabulary"); }}
-            style={{ flex: "none", width: 48, height: 48, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)", background: "#dcdce1", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
+            aria-label="Dictionary"
+            style={{ flex: "none", width: 48, height: 48, borderRadius: "50%", border: "1px solid rgba(0,0,0,0.08)", background: "#E5E5EA", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
           >
             <BookIcon size={21} stroke="#000" strokeWidth={2} />
           </button>
 
-          <div style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-            <button onClick={toggleCall} aria-label={callActive ? "Stop call" : "Start call"} style={micStyle}>
-              <MicIcon size={30} />
-            </button>
-            <span style={{ fontSize: 19, fontWeight: 600, color: "#1c1c1e", fontVariantNumeric: "tabular-nums", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", letterSpacing: "0.01em" }}>{timerText}</span>
-          </div>
+          {/* mic · hero */}
+          <button onClick={toggleCall} aria-label={callActive ? "Stop call" : "Start call"} style={micStyle}>
+            <MicIcon size={30} />
+          </button>
 
-          {/* spacer keeps the mic centered now that the skip button is removed */}
-          <div style={{ flex: "none", width: 48, height: 48 }} aria-hidden="true" />
+          {/* hang up · ends the call and returns Home (crimson exception: destructive) */}
+          <button
+            onClick={exit}
+            aria-label="Hang up"
+            style={{ flex: "none", width: 48, height: 48, borderRadius: "50%", border: "none", background: "#ff3b30", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent", boxShadow: "0 6px 16px -4px rgba(255,59,48,0.5)" }}
+          >
+            <PhoneDownIcon size={22} stroke="#fff" />
+          </button>
         </div>
       </div>
 
