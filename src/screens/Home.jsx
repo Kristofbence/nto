@@ -125,17 +125,26 @@ export default function Home({ nav }) {
           gap: 16,
         }}
       >
+        {/* SURVIVAL · ambient stat, RIGHT-aligned so it reads as a stat, not a
+            section header (section headers are always left-aligned here). */}
+        <div style={{ textAlign: "right", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>
+          Survival Day 4 · Best 12
+        </div>
+
         {/* TUTOR IDENTITY + SWITCHER · tap to change tutor / roast */}
         <div
           onClick={go("settings")}
           style={{
             ...greyCardStyle,
             padding: "15px 16px 16px",
-            minHeight: 112,
+            // Fixed height sized to a two-line quote, content top-aligned, so
+            // one- and two-line greetings occupy identical space — nothing
+            // below the card ever moves.
+            minHeight: 132,
             boxSizing: "border-box",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             cursor: "pointer",
           }}
         >
@@ -205,27 +214,22 @@ export default function Home({ nav }) {
           </div>
         </div>
 
-        {/* SURVIVAL · ambient line on the bg (not a card, not a widget) */}
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#8e8e93", textTransform: "uppercase" }}>
-          Survival Day 4 · Best 12
-        </div>
-
         {/* SCENARIO OF THE DAY */}
         <div style={{ ...greyCardStyle, padding: 16 }}>
           <div style={eyebrow}>Scenario of the day</div>
           <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1.1, marginTop: 7 }}>
             The Barcelona Bar
           </div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#ff3b30", textTransform: "uppercase", marginTop: 9 }}>
-            Brutal
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#ff3b30", textTransform: "uppercase" }}>Brutal</span>
+            <button
+              onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
+            >
+              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>
+              <ArrowRight />
+            </button>
           </div>
-          <button
-            onClick={startTalk(scenarioText(SCENARIO_OF_THE_DAY.title, SCENARIO_OF_THE_DAY.desc))}
-            style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 6, background: "#000", border: "none", borderRadius: 999, padding: "9px 16px", cursor: "pointer", outline: "none", WebkitTapHighlightColor: "transparent" }}
-          >
-            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em", color: "#fff" }}>START</span>
-            <ArrowRight />
-          </button>
         </div>
 
         {/* BENTO · TWO LIVE-DATA TILES */}
