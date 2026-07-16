@@ -3,7 +3,7 @@
 // session; Roll swaps the hero scenario in place. Ported from Scenarios.dc.html.
 import { useState } from "react";
 import TabBar from "../components/TabBar";
-import { useSettings, LANGS } from "../settings";
+import { useSettings } from "../settings";
 import { SCENARIOS as SCENARIO_DATA, SCENARIO_OF_THE_DAY, scenarioText } from "../scenarios";
 import {
   DiceIcon,
@@ -29,8 +29,7 @@ const ICONS = [PersonIcon, ChatBubblesIcon, ShieldIcon, DoorIcon, CarIcon, TagIc
 const SCENARIOS = SCENARIO_DATA.map((s, i) => ({ ...s, Icon: ICONS[i] }));
 
 export default function Scenarios({ nav }) {
-  const { settings, update } = useSettings();
-  const lang = LANGS[settings.langId] || LANGS.es;
+  const { update } = useSettings();
   // The hero card's scenario is stateful — Roll swaps in a random one IN PLACE
   // (no navigation). Seeded with the Scenario of the Day (Brutal, level 3).
   const [hero, setHero] = useState({ ...SCENARIO_OF_THE_DAY, level: 3 });
@@ -59,7 +58,7 @@ export default function Scenarios({ nav }) {
       <div className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "18px 14px 150px", display: "flex", flexDirection: "column", gap: 14 }}>
         {/* HEADER ROW · title */}
         <div style={{ padding: "6px 4px 0" }}>
-          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>{lang.flag} Scenarios</div>
+          <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>Scenarios</div>
           <div style={{ fontSize: 13, fontWeight: 500, lineHeight: 1.4, color: "#6b6b70", marginTop: 6 }}>
             Pick your fight — or roll for a random one.
           </div>

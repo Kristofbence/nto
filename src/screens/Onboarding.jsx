@@ -1,16 +1,9 @@
-// ONBOARDING · 3-step first-launch flow: Language → Level → Tutor dial.
+// ONBOARDING · 2-step first-launch flow: Level → Tutor dial. Spanish-only —
+// the language-picker step was removed; langId is hard-coded "es".
 // Finishing (or Skip) navigates to Home. Ported from Not The Owl Onboarding.dc.html.
 import { useRef, useState } from "react";
-import { ChevronLeft, LockIcon, CheckIcon } from "../components/icons";
-import { useSettings, LANG_TUTORS } from "../settings";
-
-const LANGS = [
-  { id: "es", flag: "🇪🇸", name: "Spanish", note: "500M speakers. None impressed." },
-  { id: "fr", flag: "🇫🇷", name: "French", note: "The judgiest of them all." },
-  { id: "it", flag: "🇮🇹", name: "Italian", note: "Talk with your hands. Won't help." },
-  { id: "de", flag: "🇩🇪", name: "German", note: "Compound nouns. Compound suffering." },
-  { id: "pt", flag: "🇵🇹", name: "Portuguese", note: "Basically Spanish. It is not." },
-];
+import { ChevronLeft, LockIcon } from "../components/icons";
+import { useSettings } from "../settings";
 
 const LEVELS = [
   { label: "Beginner", desc: "I know 'hola' and panic." },
@@ -32,7 +25,6 @@ const TINT = { 0: "rgba(52,199,89,0.14)", 1: "rgba(245,166,35,0.16)", 2: "rgba(2
 
 export default function Onboarding({ nav }) {
   const [step, setStep] = useState(0);
-  const [lang, setLang] = useState("es");
   const [level, setLevel] = useState(1);
   const [dial, setDial] = useState(2);
   const { update } = useSettings();
@@ -55,14 +47,12 @@ export default function Onboarding({ nav }) {
   const dragMove = (e) => { if (dragging.current) setFromClientX(e.clientX); };
   const dragEnd = () => { dragging.current = false; };
 
-  const spanish = lang === "es"; // only Spanish has tiers today
-
   const next = (e) => {
     e.preventDefault();
-    if (step < 2) { setStep((s) => s + 1); return; }
-    if (spanish && dial === 0) { alert("Paywall\n\nUnlock Nice — Pro"); return; }
+    if (step < 1) { setStep((s) => s + 1); return; }
+    if (dial === 0) { alert("Paywall\n\nUnlock Nice — Pro"); return; }
     // Persist the chosen tutor config to the shared store before entering the app.
-    update({ roast: spanish ? dial : 2, levelIdx: level, langId: lang });
+    update({ roast: dial, levelIdx: level, langId: "es" });
     nav && nav("home");
   };
   const back = (e) => { e.preventDefault(); if (step > 0) setStep((s) => s - 1); };
@@ -76,7 +66,7 @@ export default function Onboarding({ nav }) {
     transition: "left 0.22s cubic-bezier(0.22,1,0.36,1),border-color 0.2s ease",
     ...(dial === 2 ? { animation: "ntoKnob 2s ease-in-out infinite" } : {}),
   };
-  const ctaLabel = step < 2 ? "Continue →" : spanish && dial === 0 ? "Unlock Nice · Pro" : "Start suffering →";
+  const ctaLabel = step < 1 ? "Continue →" : dial === 0 ? "Unlock Nice · Pro" : "Start suffering →";
 
   const headline = { fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "#000", lineHeight: 1.14 };
   const subtitle = { fontSize: 14, fontWeight: 500, color: "#6b6b70", marginTop: 8 };
@@ -92,7 +82,7 @@ export default function Onboarding({ nav }) {
           <div onClick={skip} style={{ fontSize: 13, fontWeight: 600, color: "#8e8e93", cursor: "pointer" }}>Skip</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {[0, 1, 2].map((i) => (
+          {[0, 1].map((i) => (
             <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, transition: "background 0.2s ease", background: i <= step ? "#000" : "#d1d1d6" }} />
           ))}
         </div>
@@ -100,43 +90,8 @@ export default function Onboarding({ nav }) {
 
       {/* BODY */}
       <div className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "26px 20px 20px", display: "flex", flexDirection: "column" }}>
-        {/* STEP 1 · LANGUAGE */}
+        {/* STEP 1 · LEVEL */}
         {step === 0 && (
-          <div key="s1" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
-            <div>
-              <div style={headline}>What are you butchering?</div>
-              <div style={subtitle}>Pick one. You can barely handle this many.</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {LANGS.map((l) => {
-                const on = l.id === lang;
-                return (
-                  <div
-                    key={l.id}
-                    onClick={(e) => { e.preventDefault(); setLang(l.id); }}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 14, borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", cursor: "pointer", transition: "border-color 0.15s ease", background: "#fff",
-                      ...(on ? { border: "2px solid #000", padding: "14px 15px" } : { border: "1px solid rgba(0,0,0,0.05)", padding: "15px 16px" }),
-                    }}
-                  >
-                    <span style={{ fontSize: 26, lineHeight: 1 }}>{l.flag}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#000" }}>{l.name}</div>
-                      <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 2 }}>{l.note}</div>
-                    </div>
-                    <div style={{ flex: "none", width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s ease", background: on ? "#000" : "transparent", border: on ? "none" : "2px solid #d1d1d6" }}>
-                      {on && <CheckIcon size={14} />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", padding: "0 2px", lineHeight: 1.35 }}>One at a time. Juggling languages is a pro move.</div>
-          </div>
-        )}
-
-        {/* STEP 2 · LEVEL */}
-        {step === 1 && (
           <div key="s2" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
               <div style={headline}>How bad is it?</div>
@@ -160,29 +115,8 @@ export default function Onboarding({ nav }) {
           </div>
         )}
 
-        {/* STEP 3 · TUTOR — single tutor for non-Spanish languages */}
-        {step === 2 && !spanish && (
-          <div key="s3n" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 20 }}>
-            <div>
-              <div style={headline}>Meet your tutor.</div>
-              <div style={subtitle}>One tutor for this language — more tiers coming.</div>
-            </div>
-            <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", padding: 18 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em", color: "#000" }}>
-                {(LANG_TUTORS[lang] && LANG_TUTORS[lang].name) || "Your tutor"}
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 6 }}>
-                {LANGS.find((l) => l.id === lang)?.name} · your neighbor, unimpressed
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.4 }}>
-                Roast tiers (Harsh / Brutal / Merciless) are Spanish-only for now.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3 · TUTOR DIAL (Spanish) */}
-        {step === 2 && spanish && (
+        {/* STEP 2 · TUTOR DIAL (Spanish) */}
+        {step === 1 && (
           <div key="s3" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 20 }}>
             <div>
               <div style={headline}>Choose your suffering.</div>

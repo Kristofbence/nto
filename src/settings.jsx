@@ -52,7 +52,12 @@ const DEFAULTS = { roast: 2, levelIdx: 2, langId: "es", showTranslations: true, 
 function load() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    return { ...DEFAULTS, ...saved };
+    // SPANISH-ONLY: langId is locked to "es" regardless of any persisted value.
+    // LANGS / LANG_TUTORS / langHasTiers / the it·fr·de assistant IDs all stay in
+    // the codebase, dormant, to return when those tutors are real characters
+    // rather than translations. The multi-language machinery below still works;
+    // only this lock and the removed switcher UI keep it Spanish.
+    return { ...DEFAULTS, ...saved, langId: "es" };
   } catch {
     return { ...DEFAULTS };
   }

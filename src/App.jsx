@@ -15,7 +15,8 @@ import Scenarios from "./screens/Scenarios";
 import Wrapped from "./screens/Wrapped";
 import Vocabulary from "./screens/Vocabulary";
 import Settings from "./screens/Settings";
-import Language from "./screens/Language";
+// SPANISH-ONLY: the Language switcher screen is retired. src/screens/Language.jsx
+// stays on disk (dormant) and returns when multiple tutors are real.
 
 const ALLOWED = [
   "onboarding",
@@ -25,7 +26,6 @@ const ALLOWED = [
   "stats",
   "vocabulary",
   "settings",
-  "language",
 ];
 
 const ONBOARDED_KEY = "nto.onboarded";
@@ -53,7 +53,6 @@ export default function App() {
     stats: <Wrapped nav={navigate} />,
     vocabulary: <Vocabulary nav={navigate} />,
     settings: <Settings nav={navigate} />,
-    language: <Language nav={navigate} />,
   };
 
   return (
