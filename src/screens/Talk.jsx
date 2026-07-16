@@ -320,9 +320,11 @@ export default function Talk({ nav }) {
       // The opener is pinned separately (firstMsgRef) since it has no model
       // output — it's a static config line we own.
       if (m.type === "conversation-update") {
-        lastConvRef.current = m.messagesOpenAIFormatted || [];
-        dbg("conversation-update .messages", m.messages); // cheap-fix decider (Step 1)
-        dbg("conversation-update messagesOpenAIFormatted", m.messagesOpenAIFormatted);
+        // Bind to `messages` (native shape). messagesOpenAIFormatted is empty for
+        // this assistant; the turns live here. buildFeed filters to user/bot.
+        lastConvRef.current = m.messages || [];
+        dbg("conversation-update .messages roles", (m.messages || []).map((x) => x.role));
+        dbg("conversation-update .messages", m.messages);
         const next = buildFeed(lastConvRef.current, messagesRef.current, toolFixesRef.current, firstMsgRef.current);
         dbg("buildFeed ->", next);
         commit(next);

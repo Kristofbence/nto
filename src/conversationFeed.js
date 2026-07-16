@@ -1,5 +1,6 @@
 // Build the chat feed from Vapi's committed conversation history
-// (message.messagesOpenAIFormatted on a "conversation-update" event).
+// (message.messages on a "conversation-update" event — NOT messagesOpenAIFormatted,
+// which is empty for this assistant; the turns live in `messages`).
 //
 // The assistant's text here is the MODEL's own output — its SOURCE text — NOT a
 // transcription of the assistant's TTS audio. That requires the call to be
@@ -19,14 +20,20 @@
 //     belt-and-suspenders in case the platform ever truncates a barged-in turn.
 import { extractInlineFixes } from "./corrections";
 
-const DISPLAY_ROLES = new Set(["user", "assistant"]);
+// Roles we display. The assistant turn is "bot" in conversation-update.messages
+// (the native shape) and "assistant" in the OpenAI shape — accept both, drop
+// system/tool.
+const DISPLAY_ROLES = new Set(["user", "assistant", "bot"]);
 
-export function buildFeed(openAIMessages, prev = [], toolFixes = [], firstAssistantPin = null) {
+export function buildFeed(messages, prev = [], toolFixes = [], firstAssistantPin = null) {
   const out = [];
-  for (const x of openAIMessages || []) {
+  for (const x of messages || []) {
     if (!x || !DISPLAY_ROLES.has(x.role)) continue;
-    const content = typeof x.content === "string" ? x.content : "";
-    if (x.role === "assistant") {
+    // Content lives in `message` on conversation-update.messages (native); the
+    // OpenAI-formatted array used `content` (empty in this config). Accept either.
+    const content = typeof x.message === "string" ? x.message : typeof x.content === "string" ? x.content : "";
+    if (x.role !== "user") {
+      // "assistant" or "bot" → the tutor's line.
       const { clean, fixes } = extractInlineFixes(content, true);
       if (fixes.length) attachToLastUser(out, fixes);
       const text = (clean || "").trim();
