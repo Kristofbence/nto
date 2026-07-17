@@ -6,6 +6,9 @@ import { CloseIcon, ChevronRight, LockIcon } from "../components/icons";
 import { useSettings, LANGS, LEVELS, langHasTiers } from "../settings";
 
 const LEARN_LEVELS = LEVELS;
+// CEFR codes are labels only — the stored levelIdx still maps to the same
+// BEGINNER/INTERMEDIATE/ADVANCED value sent to the assistant.
+const CEFR = ["A1 · A2", "B1 · B2", "C1 · C2"];
 const ROAST_TIERS = [
   { label: "Nice", note: "Unlock to be treated with respect.", locked: true },
   { label: "Harsh", note: "It'll sigh a lot.", locked: false },
@@ -92,8 +95,9 @@ export default function Settings({ nav }) {
           <div style={groupCard}>
             <Row last onClick={cycleLevel}>
               <div style={rowLabel}>Your level</div>
-              <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#8e8e93" }}>{LEARN_LEVELS[learnIdx]}</span>
+              <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontWeight: 600, color: "#8e8e93" }}>{CEFR[learnIdx]}</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#000" }}>{LEARN_LEVELS[learnIdx]}</span>
                 <ChevronRight />
               </div>
             </Row>
