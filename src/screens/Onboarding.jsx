@@ -1,7 +1,8 @@
 // ONBOARDING · first-launch flow: Language → Level → (Tutor, Spanish only).
 // Finishing (or Skip) navigates to Home. Ported from Not The Owl Onboarding.dc.html.
 import { useState } from "react";
-import { ChevronLeft, LockIcon } from "../components/icons";
+import { ChevronLeft } from "../components/icons";
+import PersonaCards from "../components/PersonaCards";
 import { useSettings, langHasTiers } from "../settings";
 
 const MONO = "'SF Mono',ui-monospace,Menlo,monospace";
@@ -20,15 +21,6 @@ const LEVELS = [
   { label: "Beginner", cefr: "A1 · A2", desc: "I know 'hola' and panic." },
   { label: "Intermediate", cefr: "B1 · B2", desc: "I can order food and lie a little." },
   { label: "Advanced", cefr: "C1 · C2", desc: "I'm fluent-ish and delusional." },
-];
-
-// Roast tiers (array index = the stored `roast` value). Nice is locked — the
-// lock is the joke; tapping it does nothing and is never explained.
-const PERSONAS = [
-  { tier: "Nice", name: "Profe", roast: "¡Vas muy bien, mi amor! Sigue así.", locked: true },
-  { tier: "Harsh", name: "La Tía", roast: "Otra vez ese error… pero bueno, algún día aprendes.", locked: false },
-  { tier: "Brutal", name: "El Vecino", roast: "Dijiste eso con toda confianza. Estaba mal. Terrifying.", locked: false },
-  { tier: "Merciless", name: "El Patrón", roast: "¿Neta, güey? Mi abuela habla mejor y está dormida.", locked: false },
 ];
 
 const SELECTED_FILL = "rgba(255,59,48,0.10)";
@@ -135,35 +127,14 @@ export default function Onboarding({ nav }) {
           </div>
         )}
 
-        {/* STEP 3 · TUTOR — pick your tier (Spanish only; Nice locked) */}
+        {/* STEP 3 · PERSONALITY — pick your tier (Spanish only; Nice locked) */}
         {step === 2 && (
           <div key="s2" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
               <div style={headline}>How much mercy do you want?</div>
               <div style={subtitle}>Pick who you're stuck with. You can change it later.</div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {PERSONAS.map((p, i) => {
-                const on = i === dial;
-                const locked = p.locked;
-                return (
-                  <div
-                    key={p.tier}
-                    onClick={(e) => { e.preventDefault(); if (!locked) setDial(i); }}
-                    style={{ ...cardBase, cursor: locked ? "default" : "pointer", background: on ? SELECTED_FILL : "#fff", opacity: locked ? 0.55 : 1 }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 12, minWidth: 0 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#ff3b30", flex: "none", minWidth: 80 }}>{p.tier}</span>
-                        <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.01em", color: "#000", whiteSpace: "nowrap" }}>{p.name}</span>
-                      </div>
-                      {locked && <LockIcon size={15} stroke="#a1a1a6" strokeWidth={2.2} style={{ flex: "none" }} />}
-                    </div>
-                    <div style={{ fontSize: 13, fontWeight: 500, fontStyle: "italic", color: "#8e8e93", marginTop: 8, lineHeight: 1.35 }}>{p.roast}</div>
-                  </div>
-                );
-              })}
-            </div>
+            <PersonaCards value={dial} onChange={setDial} />
           </div>
         )}
       </div>

@@ -1,30 +1,22 @@
 // SETTINGS · language, roast-level slider (matches the onboarding tutor dial),
 // session toggles, account rows. Ported from Not The Owl Settings.dc.html.
 // Adds one on-brand "Replay intro" row to re-run onboarding.
-import { useRef, useState } from "react";
-import { CloseIcon, ChevronRight, LockIcon } from "../components/icons";
+import { useState } from "react";
+import { CloseIcon, ChevronRight } from "../components/icons";
+import PersonaCards from "../components/PersonaCards";
 import { useSettings, LANGS, LEVELS, LANG_TUTORS, langHasTiers } from "../settings";
 
 const LEARN_LEVELS = LEVELS;
 // CEFR codes are labels only — the stored levelIdx still maps to the same
 // BEGINNER/INTERMEDIATE/ADVANCED value sent to the assistant.
 const CEFR = ["A1 · A2", "B1 · B2", "C1 · C2"];
-const ROAST_TIERS = [
-  { label: "Nice", note: "Unlock to be treated with respect.", locked: true },
-  { label: "Harsh", note: "It'll sigh a lot.", locked: false },
-  { label: "Brutal", note: "The default. It remembers everything.", locked: false },
-  { label: "Merciless", note: "You asked for this.", locked: false },
-];
-const HEAT = ["#34c759", "#f5a623", "#ff7a1a", "#ff3b30"];
-const STOP_LEFTS = ["12.5%", "37.5%", "62.5%", "87.5%"];
-const LABEL_ACTIVE = ["#000000", "#f5a623", "#ff7a1a", "#ff3b30"];
 
 const sectionLabel = { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "#a1a1a6", textTransform: "uppercase", padding: "0 4px 8px" };
 const groupCard = { background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", overflow: "hidden" };
 const rowLabel = { flex: 1, minWidth: 0, fontSize: 15, fontWeight: 600, color: "#000" };
 
 export default function Settings({ nav }) {
-  // Roast level and learning level come from the shared, persisted store.
+  // Personality (roast tier) and learning level come from the shared store.
   const { settings, update } = useSettings();
   const roast = settings.roast;
   const setRoast = (v) => update({ roast: v });
@@ -36,24 +28,6 @@ export default function Settings({ nav }) {
   const translations = settings.showTranslations;
   const setTranslations = (v) => update({ showTranslations: v });
   const [haptics, setHaptics] = useState(true);
-  const trackRef = useRef(null);
-  const dragging = useRef(false);
-
-  const setRoastFromClientX = (clientX) => {
-    const el = trackRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    let ratio = (clientX - r.left) / r.width;
-    ratio = Math.max(0, Math.min(1, ratio));
-    setRoast(Math.max(0, Math.min(3, Math.round(ratio * 3))));
-  };
-  const dragStart = (e) => {
-    dragging.current = true;
-    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* noop */ }
-    setRoastFromClientX(e.clientX);
-  };
-  const dragMove = (e) => { if (dragging.current) setRoastFromClientX(e.clientX); };
-  const dragEnd = () => { dragging.current = false; };
 
   const track = (on) => ({
     flex: "none", width: 48, height: 28, borderRadius: 999, border: "none", padding: 0, cursor: "pointer", position: "relative",
@@ -63,13 +37,6 @@ export default function Settings({ nav }) {
     position: "absolute", top: 3, left: 3, width: 22, height: 22, borderRadius: "50%", background: "#fff",
     boxShadow: "0 1px 3px rgba(0,0,0,0.25)", transition: "transform 0.2s ease", transform: `translateX(${on ? 20 : 0}px)`,
   });
-
-  const heat = HEAT[roast];
-  const roastThumb = {
-    position: "absolute", top: 0, left: STOP_LEFTS[roast], transform: "translateX(-50%)", width: 26, height: 26, borderRadius: "50%",
-    background: "#fff", border: `4px solid ${heat}`, boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
-    transition: "left 0.22s cubic-bezier(0.22,1,0.36,1),border-color 0.2s ease",
-  };
 
   const Row = ({ children, last, onClick, cursor }) => (
     <div onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 12, padding: "15px 16px", borderBottom: last ? "none" : "1px solid #ececef", cursor: cursor || (onClick ? "pointer" : "default") }}>
@@ -114,39 +81,13 @@ export default function Settings({ nav }) {
           </div>
         </div>
 
-        {/* ROAST LEVEL (Spanish) — the tier slider. Single-tutor languages have
-            no tiers, so they show a read-only Tutor row instead (no slider). */}
+        {/* PERSONALITY — the tutor tier as four cards (same mechanic as
+            onboarding; one decision, one control). Single-tutor languages have
+            one persona, shown as a read-only row. */}
         {hasTiers ? (
           <div>
-            <div style={sectionLabel}>Roast level</div>
-            <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", padding: "18px 16px 16px" }}>
-              <div>
-                <div ref={trackRef} onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} style={{ position: "relative", height: 28, margin: "0 12px", cursor: "pointer", touchAction: "none" }}>
-                  <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 7, borderRadius: 4, background: "linear-gradient(90deg,#34c759 0%,#f5a623 52%,#ff3b30 100%)" }} />
-                  <div style={roastThumb} />
-                </div>
-                <div style={{ display: "flex", marginTop: 12 }}>
-                  {ROAST_TIERS.map((t, i) => {
-                    const on = i === roast;
-                    return (
-                      <div key={t.label} onClick={(e) => { e.preventDefault(); setRoast(i); }} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", transition: "color 0.15s ease", color: on ? LABEL_ACTIVE[i] : "#8e8e93" }}>{t.label}</span>
-                          {t.locked && <LockIcon size={10} />}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.35 }}>{ROAST_TIERS[roast].note}</div>
-              {ROAST_TIERS[roast].locked && (
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
-                  <LockIcon size={13} stroke="#ff3b30" strokeWidth={2.2} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#ff3b30" }}>Unlock Nice — Pro</span>
-                </div>
-              )}
-            </div>
+            <div style={sectionLabel}>Personality</div>
+            <PersonaCards value={roast} onChange={setRoast} />
           </div>
         ) : (
           <div>
