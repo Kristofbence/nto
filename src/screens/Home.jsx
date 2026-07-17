@@ -158,10 +158,11 @@ export default function Home({ nav }) {
           Survival Day 4 · Best 12
         </div>
 
-        {/* TUTOR IDENTITY + SWITCHER · tap to change tutor / roast.
-            Spanish only — the greetings are Spanish copy, so we hide the whole
-            card for single-tutor languages rather than show a stale quote. */}
-        {hasTiers && (
+        {/* TUTOR IDENTITY + SWITCHER · tap → Settings. Spanish shows the full
+            quote card (tier + greeting + Translate). Single-tutor languages
+            have no tier and no Spanish greeting, so they get a compact
+            name-only identity card in the same slot (item 60). */}
+        {hasTiers ? (
         <div
           onClick={go("settings")}
           style={{
@@ -208,6 +209,29 @@ export default function Home({ nav }) {
               </button>
             )}
           </div>
+        </div>
+        ) : (
+        <div
+          onClick={go("settings")}
+          style={{
+            ...greyCardStyle,
+            // One 10px header line, no reserved greeting space — so the 132px
+            // two-line reservation (item 46) doesn't apply. 64px keeps it a
+            // clear card sibling above the hero without being mostly air.
+            height: 64,
+            padding: "0 16px",
+            boxSizing: "border-box",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            cursor: "pointer",
+          }}
+        >
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#000" }}>
+            {tutor.name}
+          </div>
+          <ChevronRight style={{ flex: "none" }} />
         </div>
         )}
 
