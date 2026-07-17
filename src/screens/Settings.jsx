@@ -89,10 +89,17 @@ export default function Settings({ nav }) {
 
       {/* SCROLL BODY */}
       <div className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 26px", display: "flex", flexDirection: "column", gap: 22 }}>
-        {/* LEVEL */}
+        {/* LANGUAGE */}
         <div>
-          <div style={sectionLabel}>Level</div>
+          <div style={sectionLabel}>Language</div>
           <div style={groupCard}>
+            <Row onClick={(e) => { e.preventDefault(); nav && nav("language"); }}>
+              <div style={rowLabel}>Learning</div>
+              <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap" }}>{LANGS[settings.langId].flag} {LANGS[settings.langId].name}</span>
+                <ChevronRight />
+              </div>
+            </Row>
             <Row last onClick={cycleLevel}>
               <div style={rowLabel}>Your level</div>
               <div style={{ flex: "none", display: "flex", alignItems: "center", gap: 8 }}>
@@ -101,6 +108,9 @@ export default function Settings({ nav }) {
                 <ChevronRight />
               </div>
             </Row>
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 8, padding: "0 4px", lineHeight: 1.35 }}>
+            One language at a time. Multiple languages? That's a pro thing.
           </div>
         </div>
 

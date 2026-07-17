@@ -103,7 +103,13 @@ export default function Home({ nav }) {
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: "0.02em", color: "#000" }}>
           NOT THE OWL
         </div>
-        <div style={{ display: "flex", alignItems: "center", marginRight: -11 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 0, marginRight: -11 }}>
+          <span
+            onClick={go("language")}
+            style={{ width: 44, height: 44, margin: "-11px 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, lineHeight: 1, cursor: "pointer" }}
+          >
+            {lang.flag}
+          </span>
           <span
             onClick={go("settings")}
             style={{ width: 44, height: 44, margin: "-11px 0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}

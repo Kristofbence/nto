@@ -1,10 +1,18 @@
-// ONBOARDING · 2-step first-launch flow: Level → Tutor. Spanish-only.
+// ONBOARDING · first-launch flow: Language → Level → (Tutor, Spanish only).
 // Finishing (or Skip) navigates to Home. Ported from Not The Owl Onboarding.dc.html.
 import { useState } from "react";
 import { ChevronLeft, LockIcon } from "../components/icons";
-import { useSettings } from "../settings";
+import { useSettings, langHasTiers } from "../settings";
 
 const MONO = "'SF Mono',ui-monospace,Menlo,monospace";
+
+// Four languages. Spanish has the four roast tiers; it/fr/de have one tutor each.
+const LANGS = [
+  { id: "es", flag: "🇪🇸", name: "Spanish", note: "500M speakers. None impressed." },
+  { id: "it", flag: "🇮🇹", name: "Italian", note: "Talk with your hands. Won't help." },
+  { id: "fr", flag: "🇫🇷", name: "French", note: "The judgiest of them all." },
+  { id: "de", flag: "🇩🇪", name: "German", note: "Compound nouns. Compound suffering." },
+];
 
 // Level and persona are INDEPENDENT choices. CEFR codes are labels only — the
 // stored index (levelIdx) still maps to BEGINNER/INTERMEDIATE/ADVANCED for {{level}}.
@@ -27,20 +35,27 @@ const SELECTED_FILL = "rgba(255,59,48,0.10)";
 
 export default function Onboarding({ nav }) {
   const [step, setStep] = useState(0);
+  const [lang, setLang] = useState("es");
   const [level, setLevel] = useState(1);
-  const [dial, setDial] = useState(2); // Brutal · pre-selected default
+  const [dial, setDial] = useState(2); // Brutal · pre-selected default (Spanish only)
   const { update } = useSettings();
+
+  // Steps: 0 language, 1 level, then 2 tutor ONLY for tiered languages (Spanish).
+  // it/fr/de have a single tutor, so their flow is two steps — no persona step.
+  const tiered = langHasTiers(lang);
+  const lastStep = tiered ? 2 : 1;
+  const stepIndices = tiered ? [0, 1, 2] : [0, 1];
 
   const next = (e) => {
     e.preventDefault();
-    if (step < 1) { setStep((s) => s + 1); return; }
-    update({ roast: dial, levelIdx: level, langId: "es" });
+    if (step < lastStep) { setStep((s) => s + 1); return; }
+    update({ roast: tiered ? dial : 2, levelIdx: level, langId: lang });
     nav && nav("home");
   };
   const back = (e) => { e.preventDefault(); if (step > 0) setStep((s) => s - 1); };
   const skip = (e) => { e.preventDefault(); nav && nav("home"); };
 
-  const ctaLabel = step < 1 ? "Continue →" : "Start suffering →";
+  const ctaLabel = step < lastStep ? "Continue →" : "Start suffering →";
   const headline = { fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", color: "#000", lineHeight: 1.14 };
   const subtitle = { fontSize: 14, fontWeight: 500, color: "#6b6b70", marginTop: 8 };
   const cardBase = { borderRadius: 20, padding: 16, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", transition: "background 0.15s ease", border: "1px solid rgba(0,0,0,0.05)" };
@@ -56,7 +71,7 @@ export default function Onboarding({ nav }) {
           <div onClick={skip} style={{ fontSize: 13, fontWeight: 600, color: "#8e8e93", cursor: "pointer" }}>Skip</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          {[0, 1].map((i) => (
+          {stepIndices.map((i) => (
             <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, transition: "background 0.2s ease", background: i <= step ? "#000" : "#d1d1d6" }} />
           ))}
         </div>
@@ -64,8 +79,36 @@ export default function Onboarding({ nav }) {
 
       {/* BODY */}
       <div className="nto-scroll" style={{ flex: 1, overflowY: "auto", padding: "26px 20px 20px", display: "flex", flexDirection: "column" }}>
-        {/* STEP 1 · LEVEL */}
+        {/* STEP 1 · LANGUAGE */}
         {step === 0 && (
+          <div key="s0" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
+            <div>
+              <div style={headline}>What are you butchering?</div>
+              <div style={subtitle}>Pick one. You can barely handle this many.</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {LANGS.map((l) => {
+                const on = l.id === lang;
+                return (
+                  <div
+                    key={l.id}
+                    onClick={(e) => { e.preventDefault(); setLang(l.id); }}
+                    style={{ ...cardBase, cursor: "pointer", background: on ? SELECTED_FILL : "#fff", display: "flex", alignItems: "center", gap: 14 }}
+                  >
+                    <span style={{ fontSize: 26, lineHeight: 1 }}>{l.flag}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em", color: "#000" }}>{l.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 2 }}>{l.note}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 · LEVEL */}
+        {step === 1 && (
           <div key="s1" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
               <div style={headline}>How bad is it?</div>
@@ -92,8 +135,8 @@ export default function Onboarding({ nav }) {
           </div>
         )}
 
-        {/* STEP 2 · TUTOR — pick your tier (Nice locked) */}
-        {step === 1 && (
+        {/* STEP 3 · TUTOR — pick your tier (Spanish only; Nice locked) */}
+        {step === 2 && (
           <div key="s2" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
               <div style={headline}>How much mercy do you want?</div>
