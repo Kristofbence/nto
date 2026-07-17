@@ -6,7 +6,7 @@
 // Onboarding shows on first launch (persisted in localStorage); finishing or
 // skipping it lands on Home. It can be replayed from Settings → "Replay intro".
 import { useState } from "react";
-import { SettingsProvider } from "./settings";
+import { SettingsProvider, useSettings, langHasTiers } from "./settings";
 import PhoneFrame from "./components/PhoneFrame";
 import Onboarding from "./screens/Onboarding";
 import Home from "./screens/Home";
@@ -45,6 +45,23 @@ export default function App() {
     setScreen(id);
   };
 
+  return (
+    <SettingsProvider>
+      <PhoneFrame>
+        <ScreenHost screen={screen} navigate={navigate} />
+      </PhoneFrame>
+    </SettingsProvider>
+  );
+}
+
+// Resolves which screen to render. Scenarios is Spanish-only content and its tab
+// is hidden for other languages; if we ever land on it while non-Spanish (a stale
+// screen, a future in-place switcher), fall back to Home so nothing orphans.
+function ScreenHost({ screen, navigate }) {
+  const { settings } = useSettings();
+  const effective =
+    screen === "scenarios" && !langHasTiers(settings.langId) ? "home" : screen;
+
   const screens = {
     onboarding: <Onboarding nav={navigate} />,
     home: <Home nav={navigate} />,
@@ -56,9 +73,5 @@ export default function App() {
     language: <Language nav={navigate} />,
   };
 
-  return (
-    <SettingsProvider>
-      <PhoneFrame>{screens[screen]}</PhoneFrame>
-    </SettingsProvider>
-  );
+  return screens[effective];
 }

@@ -1,6 +1,7 @@
 // Reusable floating bottom tab bar · iOS 26 inset-pill style.
 // Shows on Home / Scenarios / Stats; hidden on Talk (session mode).
 import { HomeIcon, MicIcon, FightIcon, BarsIcon } from "./icons";
+import { useSettings, langHasTiers } from "../settings";
 
 const TABS = [
   { id: "home", label: "Home", Icon: HomeIcon },
@@ -10,6 +11,12 @@ const TABS = [
 ];
 
 export default function TabBar({ active = "home", nav }) {
+  const { settings } = useSettings();
+  // Scenarios are Spanish-only content today; hide the tab for other languages.
+  const tabs = langHasTiers(settings.langId)
+    ? TABS
+    : TABS.filter((t) => t.id !== "scenarios");
+
   const go = (id) => (e) => {
     e.preventDefault();
     if (nav) nav(id);
@@ -34,7 +41,7 @@ export default function TabBar({ active = "home", nav }) {
         padding: "10px 8px",
       }}
     >
-      {TABS.map(({ id, label, Icon }) => {
+      {tabs.map(({ id, label, Icon }) => {
         const on = active === id;
         return (
           <a

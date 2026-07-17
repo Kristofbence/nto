@@ -5,6 +5,7 @@
 // examples so the screen is never empty. Display layer only.
 import { useState } from "react";
 import { CloseIcon, ArrowRight } from "../components/icons";
+import { useSettings, langHasTiers } from "../settings";
 
 const STORAGE_KEY = "nto.vocabulary"; // matches Talk's addToVocabulary
 
@@ -33,6 +34,9 @@ const label = { fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "
 const cardList = { background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", overflow: "hidden" };
 
 export default function Vocabulary({ nav }) {
+  const { settings } = useSettings();
+  // The preset examples are Spanish false-friends; only show them for Spanish.
+  const showPreset = langHasTiers(settings.langId);
   const [saved, setSaved] = useState(loadSaved);
   const hasSaved = saved.length > 0;
 
@@ -99,29 +103,33 @@ export default function Vocabulary({ nav }) {
           </>
         ) : (
           <>
-            {/* EMPTY STATE · preset examples */}
+            {/* EMPTY STATE · preset examples (Spanish); generic copy otherwise */}
             <div style={{ padding: "0 4px" }}>
-              <div style={label}>Examples</div>
+              <div style={label}>{showPreset ? "Examples" : "Nothing yet"}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#6b6b70", marginTop: 8, lineHeight: 1.4 }}>
-                You haven't saved any words yet. Tap words during a conversation to save them here. Meanwhile, some classics you'll probably butcher:
+                {showPreset
+                  ? "You haven't saved any words yet. Tap words during a conversation to save them here. Meanwhile, some classics you'll probably butcher:"
+                  : "You haven't saved any words yet. Tap words during a conversation to save them here. We'll keep a running list of your greatest hits."}
               </div>
             </div>
 
-            <div style={cardList}>
-              {PRESET.map((w, i) => (
-                <div key={w.wrong} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < PRESET.length - 1 ? "1px solid #ececef" : "none" }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: "#ff3b30", textDecoration: "line-through", textDecorationThickness: 2 }}>{w.wrong}</span>
-                      <ArrowRight size={13} stroke="#a1a1a6" strokeWidth={2.6} />
-                      <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: "#000" }}>{w.right}</span>
+            {showPreset && (
+              <div style={cardList}>
+                {PRESET.map((w, i) => (
+                  <div key={w.wrong} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderBottom: i < PRESET.length - 1 ? "1px solid #ececef" : "none" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: "#ff3b30", textDecoration: "line-through", textDecorationThickness: 2 }}>{w.wrong}</span>
+                        <ArrowRight size={13} stroke="#a1a1a6" strokeWidth={2.6} />
+                        <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em", color: "#000" }}>{w.right}</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 5, lineHeight: 1.35 }}>{w.note}</div>
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 5, lineHeight: 1.35 }}>{w.note}</div>
+                    <div style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "#8e8e93", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace" }}>{w.count}</div>
                   </div>
-                  <div style={{ flex: "none", fontSize: 12, fontWeight: 700, color: "#8e8e93", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace" }}>{w.count}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

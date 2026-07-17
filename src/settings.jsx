@@ -73,7 +73,13 @@ export function SettingsProvider({ children }) {
   }, [settings]);
 
   const update = useCallback((patch) => {
-    setSettings((s) => ({ ...s, ...patch }));
+    setSettings((s) => {
+      const next = { ...s, ...patch };
+      // Scenarios are Spanish-only content today; switching language drops any
+      // chosen scenario so it can't leak into a non-Spanish call's {{scenario}}.
+      if (patch.langId != null && patch.langId !== s.langId) next.scenario = "";
+      return next;
+    });
   }, []);
 
   return (

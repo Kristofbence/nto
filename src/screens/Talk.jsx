@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import VapiPkg from "@vapi-ai/web";
 import { CloseIcon, BookIcon, MicIcon, LanguagesIcon, PhoneDownIcon } from "../components/icons";
-import { useTutorView } from "../settings";
+import { useTutorView, langHasTiers } from "../settings";
 import { pickAssistant } from "../assistants";
 import { lookupWord } from "../lookup";
 import { translate } from "../translate";
@@ -354,7 +354,9 @@ export default function Talk({ nav }) {
       const overrides = {
         variableValues: {
           level: (levelName || "").toLowerCase(),
-          scenario: scenario || "",
+          // Scenarios are Spanish-only content; never pass one into a
+          // non-Spanish call (the store also clears it on language change).
+          scenario: langHasTiers(langId) ? scenario || "" : "",
         },
         // For GENERATED turns: put the model's own words into the conversation
         // history we render, not a transcription of the assistant's TTS.

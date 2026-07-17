@@ -56,7 +56,7 @@ export default function Home({ nav }) {
   const g = GREETINGS[gi];
 
   // Current tutor / level / language from the shared, persisted store.
-  const { tutor, levelName, lang } = useTutorView();
+  const { tutor, levelName, lang, hasTiers } = useTutorView();
   const { update } = useSettings();
   // Start a Talk session: set the scenario ("" = free conversation). Talk
   // auto-starts the call on arrival regardless of route.
@@ -137,7 +137,10 @@ export default function Home({ nav }) {
           Survival Day 4 · Best 12
         </div>
 
-        {/* TUTOR IDENTITY + SWITCHER · tap to change tutor / roast */}
+        {/* TUTOR IDENTITY + SWITCHER · tap to change tutor / roast.
+            Spanish only — the greetings are Spanish copy, so we hide the whole
+            card for single-tutor languages rather than show a stale quote. */}
+        {hasTiers && (
         <div
           onClick={go("settings")}
           style={{
@@ -185,6 +188,7 @@ export default function Home({ nav }) {
             )}
           </div>
         </div>
+        )}
 
         {/* HERO · START TALKING */}
         <div
@@ -220,7 +224,8 @@ export default function Home({ nav }) {
           </div>
         </div>
 
-        {/* SCENARIO OF THE DAY */}
+        {/* SCENARIO OF THE DAY · Spanish-only content (hidden otherwise) */}
+        {hasTiers && (
         <div style={{ ...greyCardStyle, padding: 16 }}>
           <div style={eyebrow}>Scenario of the day</div>
           <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1.1, marginTop: 7 }}>
@@ -237,6 +242,7 @@ export default function Home({ nav }) {
             </button>
           </div>
         </div>
+        )}
 
         {/* BENTO · TWO LIVE-DATA TILES */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, alignItems: "stretch" }}>
@@ -256,9 +262,13 @@ export default function Home({ nav }) {
             <div style={{ marginTop: "auto" }}>
               <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, color: "#000", fontFamily: "'SF Mono',ui-monospace,Menlo,monospace", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.03em" }}>47</div>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#8e8e93", textTransform: "uppercase", marginTop: 7 }}>Words butchered</div>
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 9 }}>
-                Last: <span style={{ fontStyle: "italic", color: "#000" }}>embarazada</span>
-              </div>
+              {/* "Last:" cites a Spanish word — hide it for other languages
+                  rather than build a per-language recent-word list. */}
+              {hasTiers && (
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#6b6b70", marginTop: 9 }}>
+                  Last: <span style={{ fontStyle: "italic", color: "#000" }}>embarazada</span>
+                </div>
+              )}
             </div>
           </a>
 

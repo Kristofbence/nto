@@ -3,7 +3,7 @@
 // Adds one on-brand "Replay intro" row to re-run onboarding.
 import { useRef, useState } from "react";
 import { CloseIcon, ChevronRight, LockIcon } from "../components/icons";
-import { useSettings, LANGS, LEVELS, langHasTiers } from "../settings";
+import { useSettings, LANGS, LEVELS, LANG_TUTORS, langHasTiers } from "../settings";
 
 const LEARN_LEVELS = LEVELS;
 // CEFR codes are labels only — the stored levelIdx still maps to the same
@@ -114,47 +114,53 @@ export default function Settings({ nav }) {
           </div>
         </div>
 
-        {/* ROAST LEVEL */}
-        <div>
-          <div style={sectionLabel}>Roast level</div>
-          <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", padding: "18px 16px 16px" }}>
-            {/* Tiers only apply to Spanish; grey out + explain for single-tutor languages. */}
-            <div style={hasTiers ? undefined : { opacity: 0.4, pointerEvents: "none" }}>
-              <div ref={trackRef} onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} style={{ position: "relative", height: 28, margin: "0 12px", cursor: "pointer", touchAction: "none" }}>
-                <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 7, borderRadius: 4, background: "linear-gradient(90deg,#34c759 0%,#f5a623 52%,#ff3b30 100%)" }} />
-                <div style={roastThumb} />
-              </div>
-              <div style={{ display: "flex", marginTop: 12 }}>
-                {ROAST_TIERS.map((t, i) => {
-                  const on = i === roast;
-                  return (
-                    <div key={t.label} onClick={(e) => { e.preventDefault(); setRoast(i); }} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", transition: "color 0.15s ease", color: on ? LABEL_ACTIVE[i] : "#8e8e93" }}>{t.label}</span>
-                        {t.locked && <LockIcon size={10} />}
+        {/* ROAST LEVEL (Spanish) — the tier slider. Single-tutor languages have
+            no tiers, so they show a read-only Tutor row instead (no slider). */}
+        {hasTiers ? (
+          <div>
+            <div style={sectionLabel}>Roast level</div>
+            <div style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 2px 6px rgba(0,0,0,0.09)", padding: "18px 16px 16px" }}>
+              <div>
+                <div ref={trackRef} onPointerDown={dragStart} onPointerMove={dragMove} onPointerUp={dragEnd} style={{ position: "relative", height: 28, margin: "0 12px", cursor: "pointer", touchAction: "none" }}>
+                  <div style={{ position: "absolute", top: 11, left: 0, right: 0, height: 7, borderRadius: 4, background: "linear-gradient(90deg,#34c759 0%,#f5a623 52%,#ff3b30 100%)" }} />
+                  <div style={roastThumb} />
+                </div>
+                <div style={{ display: "flex", marginTop: 12 }}>
+                  {ROAST_TIERS.map((t, i) => {
+                    const on = i === roast;
+                    return (
+                      <div key={t.label} onClick={(e) => { e.preventDefault(); setRoast(i); }} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", transition: "color 0.15s ease", color: on ? LABEL_ACTIVE[i] : "#8e8e93" }}>{t.label}</span>
+                          {t.locked && <LockIcon size={10} />}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.35 }}>{ROAST_TIERS[roast].note}</div>
+              {ROAST_TIERS[roast].locked && (
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
+                  <LockIcon size={13} stroke="#ff3b30" strokeWidth={2.2} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#ff3b30" }}>Unlock Nice — Pro</span>
+                </div>
+              )}
             </div>
-            {hasTiers ? (
-              <>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.35 }}>{ROAST_TIERS[roast].note}</div>
-                {ROAST_TIERS[roast].locked && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 9 }}>
-                    <LockIcon size={13} stroke="#ff3b30" strokeWidth={2.2} />
-                    <span style={{ fontSize: 12, fontWeight: 700, color: "#ff3b30" }}>Unlock Nice — Pro</span>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 14, lineHeight: 1.35 }}>
-                One tutor for {LANGS[settings.langId].name} — more tiers coming.
-              </div>
-            )}
           </div>
-        </div>
+        ) : (
+          <div>
+            <div style={sectionLabel}>Tutor</div>
+            <div style={groupCard}>
+              <Row last cursor="default">
+                <div style={rowLabel}>Tutor</div>
+                <span style={{ flex: "none", fontSize: 15, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap" }}>
+                  {(LANG_TUTORS[settings.langId] || {}).name}
+                </span>
+              </Row>
+            </div>
+          </div>
+        )}
 
         {/* SESSION */}
         <div>
