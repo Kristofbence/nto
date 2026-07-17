@@ -4,17 +4,12 @@ import { useState } from "react";
 import { ChevronLeft } from "../components/icons";
 import PersonaCards from "../components/PersonaCards";
 import { isSelectable, DEFAULT_TIER } from "../personas";
-import { useSettings } from "../settings";
+import { useSettings, LANGS, SUPPORTED_LANGS } from "../settings";
 
 const MONO = "'SF Mono',ui-monospace,Menlo,monospace";
 
-// Four languages. Spanish has the four roast tiers; it/fr/de have one tutor each.
-const LANGS = [
-  { id: "es", flag: "🇪🇸", name: "Spanish", note: "500M speakers. None impressed." },
-  { id: "it", flag: "🇮🇹", name: "Italian", note: "Talk with your hands. Won't help." },
-  { id: "fr", flag: "🇫🇷", name: "French", note: "The judgiest of them all." },
-  { id: "de", flag: "🇩🇪", name: "German", note: "Compound nouns. Compound suffering." },
-];
+// Selectable languages, derived from the canonical registry (no second list).
+const LANG_LIST = SUPPORTED_LANGS.map((id) => ({ id, ...LANGS[id] }));
 
 // Level and persona are INDEPENDENT choices. CEFR codes are labels only — the
 // stored index (levelIdx) still maps to BEGINNER/INTERMEDIATE/ADVANCED for {{level}}.
@@ -83,7 +78,7 @@ export default function Onboarding({ nav }) {
               <div style={subtitle}>Pick one. You can barely handle this many.</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {LANGS.map((l) => {
+              {LANG_LIST.map((l) => {
                 const on = l.id === lang;
                 return (
                   <div

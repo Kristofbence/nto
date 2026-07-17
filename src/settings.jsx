@@ -17,13 +17,24 @@ export const TUTORS = [
 
 export const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
+// Canonical language registry — the ONE source for every language list
+// (onboarding cards, the Language screen, headers, share text). `supported`
+// means a tutor is wired and the language is selectable; not-yet-available
+// languages live here too (supported:false) so they can't drift into a
+// separate hardcoded list. `note` is the onboarding tagline. Order here is the
+// order shown to the user.
 export const LANGS = {
-  es: { name: "Spanish", flag: "🇪🇸" },
-  fr: { name: "French", flag: "🇫🇷" },
-  it: { name: "Italian", flag: "🇮🇹" },
-  de: { name: "German", flag: "🇩🇪" },
-  pt: { name: "Portuguese", flag: "🇵🇹" },
+  es: { name: "Spanish",    flag: "🇪🇸", note: "500M speakers. None impressed.",       supported: true },
+  it: { name: "Italian",    flag: "🇮🇹", note: "Talk with your hands. Won't help.",     supported: true },
+  fr: { name: "French",     flag: "🇫🇷", note: "The judgiest of them all.",            supported: true },
+  de: { name: "German",     flag: "🇩🇪", note: "Compound nouns. Compound suffering.",   supported: true },
+  pt: { name: "Portuguese", flag: "🇧🇷", note: "",                                      supported: false },
+  ja: { name: "Japanese",   flag: "🇯🇵", note: "",                                      supported: false },
 };
+
+// Ordered ids for the two views the Language screen / onboarding derive.
+export const SUPPORTED_LANGS = Object.keys(LANGS).filter((id) => LANGS[id].supported);
+export const LOCKED_LANGS = Object.keys(LANGS).filter((id) => !LANGS[id].supported);
 
 // Single-tutor languages: one persona regardless of tier.
 export const LANG_TUTORS = {

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "check:openers": "node scripts/check-openers.mjs",
+    "build": "node scripts/check-openers.mjs && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "predeploy": "npm run build",

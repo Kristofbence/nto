@@ -12,7 +12,14 @@
 //
 // Keyed by langId → roast tier index (0 nice · 1 harsh · 2 brutal · 3 merciless).
 // Only lines we hold VERBATIM from the assistant config are listed; anything
-// absent falls back to the server's own first message (unchanged behaviour).
+// absent falls back to the server's own first message (the broken path).
+//
+// Coverage is enforced two ways so a gap can't ship silently:
+//   • dev tripwire below (console.error at call-start), and
+//   • scripts/check-openers.mjs — a BUILD GATE that fails if any selectable
+//     persona (built && !locked) has no entry here.
+import { isSelectable } from "./personas.js";
+
 const FIRST_MESSAGES = {
   es: {
     // La Tía (harsh) — verbatim from the Vapi assistant config.
@@ -26,5 +33,15 @@ const FIRST_MESSAGES = {
 // case we leave the server's firstMessage in place rather than invent one).
 export function firstMessageFor(langId, roast) {
   const byLang = FIRST_MESSAGES[langId];
-  return (byLang && byLang[roast]) || null;
+  const msg = (byLang && byLang[roast]) || null;
+  // Loud in dev, silent + graceful in prod: a selectable persona with no client
+  // opener will fall back to the server firstMessage and reproduce the "King"
+  // transcription bug. Warn so it can't slip by unnoticed during development.
+  if (!msg && isSelectable(langId, roast) && import.meta.env?.DEV) {
+    console.error(
+      `[firstMessages] No client opener for ${langId} tier ${roast} — falling back ` +
+      `to the server firstMessage; "King"-class transcription artifacts likely.`
+    );
+  }
+  return msg;
 }
