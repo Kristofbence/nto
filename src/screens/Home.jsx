@@ -16,14 +16,32 @@ import {
   EyeIcon,
 } from "../components/icons";
 
-// Rotating bilingual deadpan roasts (Spanish · English).
-const GREETINGS = [
-  { es: "Ah. Volviste. Ni terminé mi café.", en: "Oh. You're back. I didn't finish my coffee." },
-  { es: "¿Listo para más humillación?", en: "Ready for more humiliation?" },
-  { es: "Déjame adivinar. Olvidaste todo otra vez.", en: "Let me guess. You forgot everything again." },
-  { es: "Ay, mi desastre favorito.", en: "Oh, my favorite disaster." },
-  { es: "Racha de 4 días. Renuncias mañana.", en: "4-day streak. You'll quit tomorrow." },
-];
+// Rotating bilingual deadpan greetings, KEYED BY ROAST TIER (0 nice · 1 harsh ·
+// 2 brutal · 3 merciless) so each persona only ever speaks its own lines —
+// mirrors firstMessages.js. Three per tier. (Spanish-only; the card is hidden
+// for other languages.)
+const GREETINGS = {
+  0: [ // Profe (Nice, locked) — reachable only via a stale roast:0, never empty.
+    { es: "Ay, mi amor. Volviste.", en: "Oh, my love. You came back." },
+    { es: "Yo sabía que no te ibas a rendir.", en: "I knew you wouldn't give up." },
+    { es: "Tranquilo. Hoy vamos despacio.", en: "Relax. Today we go slowly." },
+  ],
+  1: [ // La Tía (Harsh) — weapon is disappointment, never swearing.
+    { es: "Déjame adivinar. Olvidaste todo otra vez.", en: "Let me guess. You forgot everything again." },
+    { es: "Ay, mi desastre favorito.", en: "Ah, my favourite disaster." },
+    { es: "Tu mamá me preguntó cómo vas. Le mentí.", en: "Your mother asked how you're doing. I lied to her." },
+  ],
+  2: [ // El Vecino (Brutal) — dry, unimpressed by you specifically.
+    { es: "Ah. Volviste. Ni terminé mi café.", en: "Ah. You're back. I hadn't even finished my coffee." },
+    { es: "Cuatro días. Impresionante, para ti.", en: "Four days. Impressive, for you." },
+    { es: "Pasa. No toques nada.", en: "Come in. Don't touch anything." },
+  ],
+  3: [ // El Patrón (Merciless).
+    { es: "¿Listo para más humillación?", en: "Ready for more humiliation?" },
+    { es: "Racha de 4 días. Renuncias mañana.", en: "Four-day streak. You quit tomorrow." },
+    { es: "Órale. El mismo pendejo de ayer.", en: "Well well. The same idiot as yesterday." },
+  ],
+};
 
 const eyebrow = {
   fontSize: 10,
@@ -43,7 +61,7 @@ export default function Home({ nav }) {
 
   useEffect(() => {
     const t = setInterval(() => {
-      setGi((g) => (g + 1) % GREETINGS.length);
+      setGi((g) => g + 1); // unbounded; modulo the active tier's line count at read
       setRevealed(false); // each new line starts collapsed
     }, 6000);
     return () => clearInterval(t);
@@ -53,10 +71,13 @@ export default function Home({ nav }) {
     e.preventDefault();
     if (nav) nav(id);
   };
-  const g = GREETINGS[gi];
 
   // Current tutor / level / language from the shared, persisted store.
-  const { tutor, levelName, lang, hasTiers } = useTutorView();
+  const { tutor, levelName, lang, hasTiers, roast } = useTutorView();
+  // Greetings are keyed by roast tier so a persona can never speak another's
+  // line. Guard against a stale/out-of-range roast with the Brutal default.
+  const lines = GREETINGS[roast] || GREETINGS[2];
+  const g = lines[gi % lines.length];
   const { update } = useSettings();
   // Start a Talk session: set the scenario ("" = free conversation). Talk
   // auto-starts the call on arrival regardless of route.
