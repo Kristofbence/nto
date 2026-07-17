@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { ChevronLeft } from "../components/icons";
 import PersonaCards from "../components/PersonaCards";
-import { useSettings, langHasTiers } from "../settings";
+import { isSelectable, DEFAULT_TIER } from "../personas";
+import { useSettings } from "../settings";
 
 const MONO = "'SF Mono',ui-monospace,Menlo,monospace";
 
@@ -29,19 +30,22 @@ export default function Onboarding({ nav }) {
   const [step, setStep] = useState(0);
   const [lang, setLang] = useState("es");
   const [level, setLevel] = useState(1);
-  const [dial, setDial] = useState(2); // Brutal · pre-selected default (Spanish only)
+  const [dial, setDial] = useState(DEFAULT_TIER); // Brutal · pre-selected default
   const { update } = useSettings();
 
-  // Steps: 0 language, 1 level, then 2 tutor ONLY for tiered languages (Spanish).
-  // it/fr/de have a single tutor, so their flow is two steps — no persona step.
-  const tiered = langHasTiers(lang);
-  const lastStep = tiered ? 2 : 1;
-  const stepIndices = tiered ? [0, 1, 2] : [0, 1];
+  // Steps: 0 language, 1 level, 2 personality — three steps for EVERY language.
+  // Every language shows all four tiers; only the built one(s) are selectable.
+  const lastStep = 2;
+  const stepIndices = [0, 1, 2];
+  // The dial may hold a tier that isn't selectable for the current language
+  // (e.g. picked Merciless under Spanish, then switched to Italian). Fall back
+  // to the built/default tier so an unbuilt card is never pre-selected.
+  const safeDial = isSelectable(lang, dial) ? dial : DEFAULT_TIER;
 
   const next = (e) => {
     e.preventDefault();
     if (step < lastStep) { setStep((s) => s + 1); return; }
-    update({ roast: tiered ? dial : 2, levelIdx: level, langId: lang });
+    update({ roast: safeDial, levelIdx: level, langId: lang });
     nav && nav("home");
   };
   const back = (e) => { e.preventDefault(); if (step > 0) setStep((s) => s - 1); };
@@ -127,14 +131,15 @@ export default function Onboarding({ nav }) {
           </div>
         )}
 
-        {/* STEP 3 · PERSONALITY — pick your tier (Spanish only; Nice locked) */}
+        {/* STEP 3 · PERSONALITY — pick your tier. Every language shows all four;
+            only the built tier(s) are selectable. */}
         {step === 2 && (
           <div key="s2" style={{ animation: "ntoFade 0.35s ease both", display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
               <div style={headline}>How much mercy do you want?</div>
               <div style={subtitle}>Pick who you're stuck with. You can change it later.</div>
             </div>
-            <PersonaCards value={dial} onChange={setDial} />
+            <PersonaCards langId={lang} value={safeDial} onChange={setDial} />
           </div>
         )}
       </div>

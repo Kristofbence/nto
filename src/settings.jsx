@@ -2,16 +2,17 @@
 // Holds roast level, learning level, and language; persisted to localStorage so
 // it survives reload. Shared across every screen via React context.
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { isSelectable, DEFAULT_TIER } from "./personas";
 
 const STORAGE_KEY = "nto.settings";
 
-// Roast tiers, in slider order. Each maps to a persona + its heat color
-// (matching the app's green → amber → orange → red scale).
+// Roast tiers, in order (array index = the stored `roast` value). Tier words
+// render crimson everywhere — the design system has no per-tier "heat" color.
 export const TUTORS = [
-  { tier: "Nice", name: "Profe", heat: "#34c759" },
-  { tier: "Harsh", name: "La Tía", heat: "#f5a623" },
-  { tier: "Brutal", name: "El Vecino", heat: "#ff7a1a" },
-  { tier: "Merciless", name: "El Patrón", heat: "#ff3b30" },
+  { tier: "Nice", name: "Profe" },
+  { tier: "Harsh", name: "La Tía" },
+  { tier: "Brutal", name: "El Vecino" },
+  { tier: "Merciless", name: "El Patrón" },
 ];
 
 export const LEVELS = ["Beginner", "Intermediate", "Advanced"];
@@ -41,9 +42,9 @@ export function langHasTiers(langId) {
 export function resolvePersona(langId, roast) {
   if (langId === "es") return { ...TUTORS[roast], hasTier: true };
   const t = LANG_TUTORS[langId];
-  if (t) return { name: t.name, tier: "", heat: "#8e8e93", hasTier: false };
+  if (t) return { name: t.name, tier: "", hasTier: false };
   // Unknown language (e.g. not-yet-wired pt): neutral fallback, no tier.
-  return { name: (LANGS[langId]?.name || "Tutor"), tier: "", heat: "#8e8e93", hasTier: false };
+  return { name: (LANGS[langId]?.name || "Tutor"), tier: "", hasTier: false };
 }
 
 // `scenario` is transient (the chosen scenario title, "" = free conversation).
@@ -75,9 +76,15 @@ export function SettingsProvider({ children }) {
   const update = useCallback((patch) => {
     setSettings((s) => {
       const next = { ...s, ...patch };
-      // Scenarios are Spanish-only content today; switching language drops any
-      // chosen scenario so it can't leak into a non-Spanish call's {{scenario}}.
-      if (patch.langId != null && patch.langId !== s.langId) next.scenario = "";
+      if (patch.langId != null && patch.langId !== s.langId) {
+        // Scenarios are Spanish-only content today; switching language drops any
+        // chosen scenario so it can't leak into a non-Spanish call's {{scenario}}.
+        next.scenario = "";
+        // If the current tier isn't selectable in the new language (e.g. a stale
+        // Merciless under Italian), snap to the built default so we never point
+        // at an unbuilt or locked persona.
+        if (!isSelectable(patch.langId, next.roast)) next.roast = DEFAULT_TIER;
+      }
       return next;
     });
   }, []);

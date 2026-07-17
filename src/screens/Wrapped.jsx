@@ -17,7 +17,7 @@ const NET_STR = (NET >= 0 ? "+" : "") + NET;
 const cardSoft = { background: "#fff", border: "1px solid rgba(0,0,0,0.05)", borderRadius: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" };
 
 const REPORT = [
-  { skill: "Grammar", pct: "54%", color: "#f5a623", grade: "Shaky" },
+  { skill: "Grammar", pct: "54%", color: "#ff3b30", grade: "Shaky" },
   { skill: "Vocabulary", pct: "71%", color: "#34c759", grade: "Decent" },
   { skill: "Pronunciation", pct: "32%", color: "#ff3b30", grade: "Tragic" },
   { skill: "Accent", pct: "28%", color: "#ff3b30", grade: "Criminal" },
@@ -54,7 +54,7 @@ export default function Wrapped({ nav }) {
               <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#000", lineHeight: 1 }}>Your {lang.name}</div>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#8e8e93", marginTop: 4 }}>This week · Jul 7–13</div>
               <div style={{ fontSize: 12, fontWeight: 500, color: "#8e8e93", marginTop: 3, whiteSpace: "nowrap" }}>
-                Roasted by {tutor.name}{tutor.hasTier && <> · <span style={{ fontWeight: 700, color: tutor.heat }}>{tutor.tier}</span></>}
+                Roasted by {tutor.name}{tutor.hasTier && <> · <span style={{ fontWeight: 700, color: "#ff3b30" }}>{tutor.tier}</span></>}
               </div>
             </div>
           </div>

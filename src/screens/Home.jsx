@@ -163,7 +163,7 @@ export default function Home({ nav }) {
               {tutor.hasTier && (
                 <>
                   {" "}<span style={{ color: "#c7c7cc" }}>·</span>{" "}
-                  <span style={{ color: tutor.heat }}>{tutor.tier}</span>
+                  <span style={{ color: "#ff3b30" }}>{tutor.tier}</span>
                 </>
               )}
             </div>

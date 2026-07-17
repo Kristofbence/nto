@@ -13,8 +13,6 @@ export const colors = {
   hairline: "#e2e2e7",
   divider: "#ececef",
   red: "#ff3b30",
-  amber: "#f5a623",
-  amberDeep: "#ff7a1a",
   green: "#34c759",
   acidGreen: "#39FF14",
   utility: "#dcdce1",

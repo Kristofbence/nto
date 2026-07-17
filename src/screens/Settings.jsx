@@ -4,7 +4,8 @@
 import { useState } from "react";
 import { CloseIcon, ChevronRight } from "../components/icons";
 import PersonaCards from "../components/PersonaCards";
-import { useSettings, LANGS, LEVELS, LANG_TUTORS, langHasTiers } from "../settings";
+import { isSelectable, DEFAULT_TIER } from "../personas";
+import { useSettings, LANGS, LEVELS } from "../settings";
 
 const LEARN_LEVELS = LEVELS;
 // CEFR codes are labels only — the stored levelIdx still maps to the same
@@ -20,9 +21,11 @@ export default function Settings({ nav }) {
   const { settings, update } = useSettings();
   const roast = settings.roast;
   const setRoast = (v) => update({ roast: v });
+  // Guard the highlighted card: if the stored tier isn't selectable for this
+  // language (e.g. a stale Merciless under Italian), show the built default.
+  const safeRoast = isSelectable(settings.langId, roast) ? roast : DEFAULT_TIER;
   const learnIdx = settings.levelIdx;
   const cycleLevel = () => update({ levelIdx: (settings.levelIdx + 1) % LEARN_LEVELS.length });
-  const hasTiers = langHasTiers(settings.langId);
 
   // "Show translations" is shared + persisted (read by the Talk screen).
   const translations = settings.showTranslations;
@@ -82,26 +85,12 @@ export default function Settings({ nav }) {
         </div>
 
         {/* PERSONALITY — the tutor tier as four cards (same mechanic as
-            onboarding; one decision, one control). Single-tutor languages have
-            one persona, shown as a read-only row. */}
-        {hasTiers ? (
-          <div>
-            <div style={sectionLabel}>Personality</div>
-            <PersonaCards value={roast} onChange={setRoast} />
-          </div>
-        ) : (
-          <div>
-            <div style={sectionLabel}>Tutor</div>
-            <div style={groupCard}>
-              <Row last cursor="default">
-                <div style={rowLabel}>Tutor</div>
-                <span style={{ flex: "none", fontSize: 15, fontWeight: 600, color: "#8e8e93", whiteSpace: "nowrap" }}>
-                  {(LANG_TUTORS[settings.langId] || {}).name}
-                </span>
-              </Row>
-            </div>
-          </div>
-        )}
+            onboarding; one decision, one control). Every language shows all
+            four; only the built tier(s) are selectable. */}
+        <div>
+          <div style={sectionLabel}>Personality</div>
+          <PersonaCards langId={settings.langId} value={safeRoast} onChange={setRoast} />
+        </div>
 
         {/* SESSION */}
         <div>

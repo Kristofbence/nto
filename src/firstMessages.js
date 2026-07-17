@@ -15,6 +15,8 @@
 // absent falls back to the server's own first message (unchanged behaviour).
 const FIRST_MESSAGES = {
   es: {
+    // La Tía (harsh) — verbatim from the Vapi assistant config.
+    1: "Ay… otro más. Bueno, siéntate. Antes de empezar a sufrir juntos, dime: ¿cómo te llamas? Y contéstame en español, por favor, que para eso viniste.",
     // El Patrón (merciless) — verbatim from assistant b4c321…026bc4 config.
     3: "Órale, ¿y este quién chingados es? A ver, güey, dime tu nombre en español, y no me hagas repetírtelo, porque no tengo toda la pinche tarde.",
   },
